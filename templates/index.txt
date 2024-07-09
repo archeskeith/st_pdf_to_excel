@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <title>PDF Search</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">PDF to CSV converter</h1>
+
+        <form method="POST" enctype="multipart/form-data" id="searchForm" action="/">
+            <div class="form-group">
+                <label for="file">Upload First PDF:</label>
+                <input type="file" class="form-control-file" name="file" accept=".pdf" required>
+            </div>
+            <div class="form-group">
+                <label for="second_file">Upload Second PDF:</label>
+                <input type="file" class="form-control-file" name="second_file" accept=".pdf">
+            </div>
+            <div class="form-group" style="display: none">
+                <label for="excel_file">Upload excel file (to send data to):</label>
+                <input type="file" class="form-control-file" name="excel_file" accept=".xlsx, .xls" required>
+            </div>
+            <div class="form-group">
+                <label for="search_words">Search Words:</label>
+                <input type="text" class="form-control" name="search_words" id="search_words" required>
+            </div>
+
+            <button id="searchButton" type="button" class="btn btn-primary">Search</button>
+        </form>
+
+        {% if error %}
+            <p class="text-danger">{{ error }}</p>
+        {% endif %}
+        <div id="resultsContainer"> 
+            {% if pdf_text|length > 0 %}
+                <form method="POST" action="/extract" id="extractForm" class="mt-4">
+                    <h2>Search Results for '{{ search_words }}':</h2>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Select</th>
+                                <th>Image Preview</th>
+                                <th>Page Number</th>
+                                <th>Text</th>
+                                <th>Explanation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in pdf_text %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input" name="selected_results[]" value="{{ result['page_number'] }}">
+                                        <input type="hidden" name="csv_data_{{ result['page_number'] }}" value="{{ result['page_number'] }}">
+                                    </td>
+                                    <td>
+                                        <img src="{{ result['thumbnail_path'] }}" alt="Thumbnail">
+                                    </td>
+                                    <td>{{ result['page_number'] }}</td>
+                                    <td>{{ result['text'] }}</td>
+                                    <td>{{ result['explanation'] }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <input type="hidden" name="search_words" value="{{ search_words }}">
+                    <button type="submit" class="btn btn-success">Extract CSV</button>
+                </form>
+            {% else %}
+                {% if search_words %}
+                    <p class="mt-4">No results found.</p>
+                {% endif %}
+            {% endif %}
+
+            {% if csv_filename %}
+                <p class="mt-4">CSV file '{{ csv_filename }}' has been extracted.</p>
+            {% endif %}
+        </div>
+
+        <div class="container" id="bankStatementFormContainer"> 
+            <h1 class="mt-5">Bank Statement PDF to Excel</h1>
+            <form method="POST" enctype="multipart/form-data" action="/view_pdf" id="bankStatementForm">
+                <div class="form-group">
+                    <label for="bs_file">Upload Bank Statement (PDF):</label>
+                    <br>
+                    <input type="file" name="bs_file" accept=".pdf" required>
+                    <br><br>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+        </div>
+
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', (event) => {
+                const searchButton = document.getElementById('searchButton');
+                const resultsContainer = document.getElementById('resultsContainer');
+                const bankStatementFormContainer = document.getElementById('bankStatementFormContainer');
+
+                searchButton.addEventListener('click', function() {
+                    var searchWords = document.getElementById('search_words').value;
+                    if (searchWords) {
+                        document.getElementById('searchForm').action = '/?search_words=' + searchWords;
+                        document.getElementById('searchForm').submit();
+                        resultsContainer.style.display = 'block'; // Show results container
+                        bankStatementFormContainer.style.display = 'none'; // Hide other form
+                    } else {
+                        alert("Please enter search words."); // Alert if searchWords is empty
+                    }
+                });
+
+                // Hide results container and other form initially
+                resultsContainer.style.display = 'none';
+                bankStatementFormContainer.style.display = 'none';
+            });
+        </script>
+    </div>
+</body>
+</html>
+

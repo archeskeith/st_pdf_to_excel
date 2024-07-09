@@ -1,0 +1,12 @@
+# This is a basic workflow that is manually triggered
+
+on:
+  push:
+      branches:
+        - '*'
+env:
+    OPENAPI_KEY: ${{ secrets.OPENAPI_KEY }}
+
+jobs:
+  ai:
+    runs-on: mac-latest

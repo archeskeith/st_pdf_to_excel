@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Reader - Result</title>
+</head>
+<body>
+    <h1>PDF Content</h1>
+    {% for page in pdf_content %}
+        <h2>Page {{ page.page }}</h2>
+        <pre>{{ page.text }}</pre>
+    {% endfor %}
+
+    <form action="/search" method="post">
+        <label for="search_query">Search for text:</label>
+        <input type="text" name="search_query" required>
+        <input type="submit" value="Search">
+        {% for page in pdf_content %}
+            <input type="hidden" name="pdf_content" value="{{ page.text }}">
+        {% endfor %}
+    </form>
+</body>
+</html>

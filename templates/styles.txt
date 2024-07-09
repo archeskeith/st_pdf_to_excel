@@ -1,0 +1,35 @@
+
+body {
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    background-color: #FFFAFA; /* Light background color */
+}
+
+h1 {
+    margin-bottom: 20px;
+    text-align: center;
+    color: #333; /* Darker text color */
+}
+
+button {
+    padding: 10px 20px;
+    margin: 10px;
+    background-color: #007bff; /* Bootstrap blue */
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button.cancel {
+    background-color: #dc3545; /* Bootstrap red */
+}

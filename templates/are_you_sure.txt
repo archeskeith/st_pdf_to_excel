@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Exported Files</title>
+    <style>
+        #dictionaryTextbox {
+            text-align: left;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center; /* Center align all content inside the container */
+        }
+        h3, h4 {
+            text-align: center;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="checkbox"] {
+            margin-right: 5px;
+        }
+        button, input[type="submit"] {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover, input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>Files are ready to be transferred to the main xlsx file. Please make sure to check if everything is in order.</h3>
+        <form id="submitButtonFormCheckbox" action="/run_extract" method="post">
+            <h4>Select files to include:</h4>
+            <!-- {% for file, download_link in files_with_links.items() %}
+                <input type="checkbox" name="files_to_include" value="{{ file }}">{{ file }} - <a href="{{ download_link }}">Download</a><br>
+            {% endfor %} -->
+            {% for file, download_link in files_with_links.items() %}
+                <input type="checkbox" name="files_to_include" value="{{ file }}">{{ file }} - <a href="{{ download_link }}">Download</a><br>
+            {% endfor %}
+            <br>
+            <button type="submit">Convert to CSV Again</button>  
+            <button type="submit" onclick="goBack()">I'm done thanks</button>  
+            <br>    
+        </form>
+        
+        
+        
+        <!-- <form id="submitButtonFormCheckbox" action="/run_extract" method="post">
+            <h4>Select files to include:</h4>
+            {% for file in exported_files|sort %}
+            <input type="checkbox" name="files_to_include" value="{{ file }}">{{ file }}<a href="{{ download_links[0] }}">Download</a><br>
+        {% endfor %}
+
+            <br>
+            <button type="submit">Convert to CSV Again</button>  <button type="submit" onclick="goBack()">I'm done thanks</button>  
+            <br>
+            
+        </form> -->
+
+        <form id="submitButtonForm" action="/run_again" method="post" style="display: {% if flag %}none{% else %}block{% endif %};">
+            
+                <h2>Enter Terms with Alternatives</h2>
+                
+                    <textarea id="termsWithAlternatives" name="dictionaryTextbox" rows="20" cols="70"placeholder="Enter terms with their alternatives separated by line breaks" rows="10" required>
+                    {
+                        'total interest bearing liabilities or financial debt':['financial debt','total liabilities'],
+
+                        'total tangible net worth (equity)':["total shareholder's equity","total stockholder's equity","total equity"],
+                        
+                        'total assets':[],
+                        
+                        'current assets':['total current assets'],
+                        
+                        'current liabilities':['total current liabilities'],
+                        
+                        'cash and easily marketable securities':['cash','cash and cash equivalents'],
+                        
+                        'intangible asset':[],
+                        
+                        'short-term debt':['loans payable - current'],
+                        
+                        'total accounts receivable':['receivables','trade and other receivables'],
+                        
+                        'accounts payable': ['trade payables','trade and other payables'],
+                        
+                        'inventory':[],
+                        
+                        'cost of services':['cost of sales','cost of goods','cost of goods/cost of services','direct costs'],
+                        
+                        
+                        'operating expenses':['operating costs'],
+                        
+                        'earnings before interest and tax':['operating income','earnings before interest and tax (ebit)','ebit','net income from operations','profit before tax','income before changes in working capital'],
+                        
+                        'interest expense':[],
+                        
+                        'gross profit':['gross income'],
+                        
+                        'total revenue':['gross revenue','total sales','gross sales','revenue','service revenues','gross revenue'],
+                        
+                        'net profit after tax': ['net income after tax','npat','net income','net earnings','net income (loss) after tax','profit for the year'],
+                        
+
+                        'earnings before interest tax depreciation amortization':['income before changes in working capital'],
+                         
+
+                        
+                        'operating cash flow':['ocf','net cash provided by operating activities or cash flow from operations',
+                                               'net cash used in operating activities or cash flow from operations',
+                                               'net cash flows provided by/(used from) from investing activities',
+                                               'net cash provided by operating activities','net cash provided by/(used from) from investing activities',
+                                               'net cash provided by/(used in) operating activities']
+                        
+
+                    }
+                    </textarea><br><br>
+                
+            <button type="submit">Extract to Excel!</button>
+        </form>
+    </div>
+    <script>
+        function goBack() {
+            // Change the form's action attribute to "/go_back"
+            
+            document.getElementById("submitButtonFormCheckbox").action = "/go_back";
+            // Submit the form
+            document.getElementById("submitButtonFormCheckbox").submit();
+        }
+    </script>
+</body>
+</html>

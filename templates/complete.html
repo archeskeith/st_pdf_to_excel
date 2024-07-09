@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel File Completed</title>
+</head>
+<body>
+    <p><a href="{{ download_link }}">Excel File</a> has been completed.</p>
+    <!-- <button onclick="goBack()">Go Back Home</button> -->
+    <button type="submit" onclick="goBack()">Go Back Home</button>  
+
+    <script>
+        function goBack() {
+            // Change the form's action attribute to "/go_back"
+            document.getElementById("submitButtonFormCheckbox").action = "/go_back";
+            // Submit the form
+            document.getElementById("submitButtonFormCheckbox").submit();
+        }
+    </script>
+</body>
+</html>
