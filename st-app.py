@@ -2,6 +2,7 @@ import streamlit as st
 from PIL import Image
 # import fitz
 # from fitz import *
+import pdfplumber
 # from fitz_fix.fitz import * 
 from PyPDF2 import PdfMerger
 from concurrent.futures import ThreadPoolExecutor
@@ -17,6 +18,7 @@ import openai
 import base64
 from io import StringIO
 import csv
+import ocrmypdf
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -95,34 +97,68 @@ def string_to_csv(input_string):
     return headers, csv_rows
 
 
-def extract_text_from_page(page):
-    # Extract text and thumbnail from a PDF page (try to extract text directly first)
-    text = page.get_text()
-    if text.strip() == "":  # If no text is extracted (likely an image-based pdf)
-        pix = page.get_pixmap()
-        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-        try:
-            text = pytesseract.image_to_string(img)
-        except pytesseract.TesseractError as e:
-            st.error(f"OCR Error on page {page.number}:{e}")
-            text = ""
+# def extract_text_from_page(page):
+#     # Extract text and thumbnail from a PDF page (try to extract text directly first)
+#     text = page.get_text()
+#     if text.strip() == "":  # If no text is extracted (likely an image-based pdf)
+#         pix = page.get_pixmap()
+#         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+#         try:
+#             text = pytesseract.image_to_string(img)
+#         except pytesseract.TesseractError as e:
+#             st.error(f"OCR Error on page {page.number}:{e}")
+#             text = ""
 
-    pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
-    thumbnail_path = os.path.join(THUMBNAILS_DIR, f'page_{page.number}_thumbnail.jpg')
-    pix.save(thumbnail_path)
+#     pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
+#     thumbnail_path = os.path.join(THUMBNAILS_DIR, f'page_{page.number}_thumbnail.jpg')
+#     pix.save(thumbnail_path)
+
+#     return {
+#         'page_number': page.number,
+#         'text': text,
+#         'explanation': 'Explanation placeholder',
+#         'thumbnail_path': f'static/thumbnails/page_{page.number}_thumbnail.jpg',
+#     }
+
+
+def extract_text_from_page(page_num, pdf_path):
+    """Extracts text and thumbnail from a PDF page using pdfplumber."""
+
+    with pdfplumber.open(pdf_path) as pdf:
+        page = pdf.pages[page_num]
+        
+        # Try table extraction first
+        tables = page.extract_tables()
+        if tables:
+            st.write(f"Tables found on page {page_num + 1}")
+            return {
+                'page_number': page_num,
+                'text': "",  # Or you can include some table summary here
+                'tables': tables,
+                'thumbnail_path': f'static/thumbnails/page_{page_num + 1}_thumbnail.png',
+            }
+
+        # If no tables found, fall back to text extraction (OCR if needed)
+        text = page.extract_text(x_tolerance=3, y_tolerance=3, use_text_flow=False, text_layout=True)
+
+    # Create thumbnail
+    im = page.to_image(resolution=150)
+    thumbnail_path = os.path.join(THUMBNAILS_DIR, f'page_{page_num + 1}_thumbnail.png')
+    im.save(thumbnail_path, format="PNG") 
 
     return {
-        'page_number': page.number,
+        'page_number': page_num,
         'text': text,
         'explanation': 'Explanation placeholder',
-        'thumbnail_path': f'static/thumbnails/page_{page.number}_thumbnail.jpg',
+        'thumbnail_path': f'static/thumbnails/page_{page_num + 1}_thumbnail.png', 
     }
 
-def extract_table_with_openai(result, model="gpt-4o"): 
+
+def extract_table_with_openai(result, model="gpt-4o"):
     """Extracts tabular data using OpenAI API for a given page number within the search results."""
 
-    page_num = result['page_number']
-    thumbnail_path = result['thumbnail_path']
+    page_num = result["page_number"]
+    thumbnail_path = result["thumbnail_path"]
 
     image_path = os.path.join(BASE_DIR, thumbnail_path)
 
@@ -141,39 +177,41 @@ def extract_table_with_openai(result, model="gpt-4o"):
                 {
                     "role": "user",
                     "content": [
-                        # Convert the following OCR text to CSV:\n{original_image_text}. Copy as much as possible the text provided, but add in | (for new columns) and /n (for new rows), according to how it looks like on the image: {Image.open(image_path)}. Indicate '/n' if a new row is seen, based on the pdf image :{Image.open(image_path)}. Indicate a | if a new column is seen, based on the pdf image {Image.open(image_path)}. Make sure years are directly aligned with the columns they are placed at (IMPORTANT). Do it directly, no need to respond, just do the table.
-                        # {"type": "text", "text": "Please extract the data from the table in the image and provide it in CSV format."}, 
-                        {"type": "text", "text": "Please extract the data from the table in the image and provide it in CSV format. Copy as much as possible the text provided, but add in | (for new columns) and /n (for new rows), according to how it looks like on the image. Indicate '/n' if a new row is seen. Make sure years are directly aligned with the columns they are placed at (IMPORTANT). Do it directly, no need to respond, just do the table. Make sure the output really looks like the table shown in the picture"}, 
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},  
+                        {"type": "text", "text": "Please extract the data from the table in the image and provide it in CSV format. Copy as much as possible the text provided, but add in | (for new columns) and /n (for new rows), according to how it looks like on the image. Indicate '/n' if a new row is seen. Make sure years are directly aligned with the columns they are placed at (IMPORTANT). Do it directly, no need to respond, just do the table. Make sure the output really looks like the table shown in the picture"},
+                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
                     ],
                 },
             ]
         )
-        extracted_table_data = response['choices'][0]['message']['content']
+        extracted_table_data = response["choices"][0]["message"]["content"]
         if extracted_table_data == "No table found":
             st.warning(f"No table found on page {result['page_number'] + 1}")
             return None
 
         # Normalize and Clean the extracted data
-        extracted_table_data = extracted_table_data.replace('\r\n', '\n').replace('\r', '\n')
-        # try:
-        #     return pd.read_csv(StringIO(extracted_table_data), lineterminator='\n')
-        # except pd.errors.ParserError as e:
-        #     st.error(f"Error parsing table on page {result['page_number'] + 1}: {e}. Raw table data: {extracted_table_data}")
-        #     return None
-        # st.write(extracted_table_data)
-        headers,csv_rows = string_to_csv(extracted_table_data)
+        extracted_table_data = extracted_table_data.replace("\r\n", "\n").replace("\r", "\n")
+        
+        # Remove empty values from the table
+        extracted_table_data = "\n".join([line for line in extracted_table_data.splitlines() if line.strip()])
+        
+        # print(extracted_table_data)
+        headers, csv_rows = string_to_csv(extracted_table_data)
         st.write(headers)
         st.write(csv_rows)
 
         # Write the CSV file (add header first, then rows)
-        with open(os.path.join(OUTPUT_DIR, f"page_{page_num + 1}.csv"), "w", newline='', encoding="utf-8") as csvfile: 
+        with open(
+            os.path.join(OUTPUT_DIR, f"page_{page_num + 1}.csv"),
+            "w",
+            newline="",
+            encoding="utf-8",
+        ) as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(headers)
             writer.writerows(csv_rows)
-        
+
         st.success(f"CSV File page_{page_num + 1}.csv has been extracted.")
-        return f"page_{page_num + 1}.csv" # This should be the returned file name 
+        return f"page_{page_num + 1}.csv"  # This should be the returned file name
         # return pd.read_csv(StringIO(extracted_table_data), lineterminator='\n')
         # return extracted_table_data
     except openai.error.OpenAIError as e:  # Moved here
@@ -183,13 +221,12 @@ def extract_table_with_openai(result, model="gpt-4o"):
         st.warning(f"Empty table on page {page_num + 1}")
         return None
 
+def search_pdfs(pdf_files, search_words, excel_file=None):
+    output_dir = os.path.join(BASE_DIR, "output")
+    # global_excel_file = os.path.join(output_dir, "new_version.xlsx")
 
-def search_pdfs(pdf_files,search_words,excel_file=None):
-    output_dir = os.path.join(BASE_DIR,"output")
-    global_excel_file = os.path.join(output_dir, "new_version.xlsx")
-    
-    # merge PDFs (if multiple files has been uploaded)
-    with tempfile.NamedTemporaryFile(suffix='.pdf',delete=False,dir=BASE_DIR) as temp_pdf:
+    # Merge PDFs (if multiple files have been uploaded)
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False, dir=BASE_DIR) as temp_pdf:
         if len(pdf_files) > 1:
             merger = PdfMerger()
             for pdf in pdf_files:
@@ -197,31 +234,76 @@ def search_pdfs(pdf_files,search_words,excel_file=None):
             merger.write(temp_pdf)
         else:
             temp_pdf.write(pdf_files[0].read())
-        
         temp_pdf_path = temp_pdf.name
-    
-    # open merged pdf or single pdf
-    doc = fitz.open(temp_pdf_path)
 
-    # search logic using ThreadPoolExecutor (parallelism)
-    results = []
-    search_words_list = search_words.lower().split()
+        # OCR the temporary PDF file
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False, dir=BASE_DIR) as ocr_temp_pdf:
+            ocrmypdf.ocr(temp_pdf_path, ocr_temp_pdf.name, deskew=True)  # Perform OCR
 
-    with ThreadPoolExecutor() as executor:
-        futures = [executor.submit(extract_text_from_page,page) for page in doc.pages()]
-        
-        for future in as_completed(futures):
-            result = future.result()
-            result_text = result['text'].lower()
-            if not search_words_list or any(word in result_text for word in search_words_list):
-                result['thumbnail_path'] = os.path.join("thumbnails", os.path.basename(result['thumbnail_path']))
-                results.append(result)
-    
-    results.sort(key=lambda x: x['page_number'])
-    doc.close()
+    # Open the OCR'd PDF file
+    with pdfplumber.open(ocr_temp_pdf.name) as pdf:
+        # Search logic using ThreadPoolExecutor (parallelism)
+        results = []
+        search_words_list = search_words.lower().split()
+
+        with ThreadPoolExecutor() as executor:
+            # Use page_num (0-based indexing) directly in pdfplumber
+            futures = [executor.submit(extract_text_from_page, page_num, ocr_temp_pdf.name) 
+                        for page_num in range(len(pdf.pages))] 
+
+            for future in as_completed(futures):
+                result = future.result()
+                result_text = result['text'].lower()
+                if not search_words_list or any(word in result_text for word in search_words_list):
+                    results.append(result)
+                    # print(result)
+
+
+    # Sort results by page number (add 1 to page_number since it's 0-based in pdfplumber)
+    results.sort(key=lambda x: x['page_number'] + 1)
+
+    # Remove the temporary PDF files
     os.remove(temp_pdf_path)
-    # st.write(results)
-    return results
+    os.remove(ocr_temp_pdf.name)  # Remove the OCR'd PDF file
+    return results  
+# def search_pdfs(pdf_files,search_words,excel_file=None):
+#     output_dir = os.path.join(BASE_DIR,"output")
+#     global_excel_file = os.path.join(output_dir, "new_version.xlsx")
+    
+#     # merge PDFs (if multiple files has been uploaded)
+#     with tempfile.NamedTemporaryFile(suffix='.pdf',delete=False,dir=BASE_DIR) as temp_pdf:
+#         if len(pdf_files) > 1:
+#             merger = PdfMerger()
+#             for pdf in pdf_files:
+#                 merger.append(pdf)
+#             merger.write(temp_pdf)
+#         else:
+#             temp_pdf.write(pdf_files[0].read())
+        
+#         temp_pdf_path = temp_pdf.name
+    
+#     # open merged pdf or single pdf
+#     doc = fitz.open(temp_pdf_path)
+
+#     # search logic using ThreadPoolExecutor (parallelism)
+#     results = []
+#     search_words_list = search_words.lower().split()
+
+#     with ThreadPoolExecutor() as executor:
+#         futures = [executor.submit(extract_text_from_page,page.number - 1, temp_pdf_path) for page in doc.pages()]
+        
+#         for future in as_completed(futures):
+#             result = future.result()
+#             result_text = result['text'].lower()
+#             if not search_words_list or any(word in result_text for word in search_words_list):
+#                 result['thumbnail_path'] = os.path.join("thumbnails", os.path.basename(result['thumbnail_path']))
+#                 results.append(result)
+    
+#     results.sort(key=lambda x: x['page_number'])
+#     doc.close()
+#     os.remove(temp_pdf_path)
+#     # st.write(results)
+#     return results
 
 
 
