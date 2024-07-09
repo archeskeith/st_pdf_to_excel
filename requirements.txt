@@ -1,6 +1,6 @@
 # PDF Manipulation
-fitz
-PyMuPDF==1.18.18
+
+PyMuPDF==1.23.6
 PyPDF2==3.0.1
 
 # Data Analysis
@@ -16,4 +16,4 @@ pytesseract==0.3.10
 openai==0.28.0 # Add an explicit version
 
 # Environment Variables
-python-dotenv==1.0.0  # For loading API key from .env file
+# python-dotenv==1.0.0  # For loading API key from .env file
