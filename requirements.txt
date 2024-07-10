@@ -6,5 +6,7 @@ PyPDF2
 pandas==1.4.4
 Pillow==9.2.0
 pytesseract==0.3.10
+tesseract-ocr
+libtesseract-dev
 ocrmypdf
 openai==0.28.0
