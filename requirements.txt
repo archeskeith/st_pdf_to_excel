@@ -1,4 +1,5 @@
 numpy
+imagemagick
 boto3
 pdfplumber
 python-dotenv
