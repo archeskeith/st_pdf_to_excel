@@ -6,5 +6,6 @@ openai
 pdfplumber==0.11.2
 boto3
 python-dotenv
-tesseract-ocr
+# tesseract-ocr
+streamlit==0.75.0
 # tesseract-ocr-por
