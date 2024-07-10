@@ -7,4 +7,4 @@ pdfplumber==0.11.2
 boto3
 python-dotenv
 tesseract-ocr
-tesseract-ocr-por
+# tesseract-ocr-por
