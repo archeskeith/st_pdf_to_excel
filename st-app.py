@@ -360,9 +360,9 @@ with st.form('searchForm'):
                                 image = Image.open(os.path.join(BASE_DIR, result['thumbnail_path']))
                                 st.image(image, caption=f"Page {result['page_number']+ 1} Thumbnail", use_column_width=True)
                       
-                    
-            except Exception as e:
-                st.error(f"Error processing PDFs: {e}")
+            # muichiro
+            # except Exception as e:
+            #     st.error(f"Error processing PDFs: {e}")
         if excel_file is not None:
             try:
                 save_path = os.path.join(UPLOADS_DIR,excel_file.name)
