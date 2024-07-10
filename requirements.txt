@@ -1,3 +1,4 @@
+numpy==1.24.3  # Or a version known to be compatible with pandas==1.4.4
 pdfplumber
 PyPDF2
 pandas==1.4.4
