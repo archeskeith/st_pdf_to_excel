@@ -1,6 +1,9 @@
 import streamlit as st
 from PIL import Image
+# import fitz
+# from fitz import *
 import pdfplumber
+# from fitz_fix.fitz import * 
 from PyPDF2 import PdfMerger
 from concurrent.futures import ThreadPoolExecutor
 import os
@@ -9,8 +12,7 @@ import boto3
 import tempfile
 import time
 from concurrent.futures import as_completed
-# import pytesseract
-
+import pytesseract
 from PIL import Image
 import openai
 import base64
