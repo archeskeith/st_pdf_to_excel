@@ -12,7 +12,6 @@ import boto3
 import tempfile
 import time
 from concurrent.futures import as_completed
-import pytesseract
 from PIL import Image
 import openai
 import base64
