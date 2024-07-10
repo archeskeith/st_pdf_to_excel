@@ -3,9 +3,9 @@ from PIL import Image
 # import fitz
 # from fitz import *
 import pdfplumber
-
+import PyPDF2
 # from fitz_fix.fitz import * 
-from PyPDF2 import PdfMerger  # Replace with the following
+# from PyPDF2 import PdfMerger  # Replace with the following
 # from PyPDF2.pdfmerger import PdfMerger
 from concurrent.futures import ThreadPoolExecutor
 import os
