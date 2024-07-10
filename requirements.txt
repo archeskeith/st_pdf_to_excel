@@ -1,16 +1,6 @@
-# PDF Manipulation
-PyPDF2==3.0.1
 pdfplumber
-
-# Data Analysis
 pandas==1.4.4
-
-# Image Processing
 Pillow==9.2.0
-
-# OCR and Table Extraction
 pytesseract==0.3.10
 ocrmypdf
-
-# OpenAI API
-openai==0.28.0  # Or the latest compatible version
+openai==0.28.0
