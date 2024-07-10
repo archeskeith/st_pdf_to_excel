@@ -1,5 +1,5 @@
 numpy
-imagemagick
+# imagemagick
 boto3
 pdfplumber
 python-dotenv
