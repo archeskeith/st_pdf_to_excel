@@ -335,30 +335,30 @@ with st.form('searchForm'):
         if not pdf_files:
             st.warning("Please upload at least one PDF file.")
         else:
-            try:
-                pdf_text = search_pdfs(pdf_files, search_words, excel_file)
-                st.session_state['pdf_text'] = pdf_text
+            # try:
+            pdf_text = search_pdfs(pdf_files, search_words, excel_file)
+            st.session_state['pdf_text'] = pdf_text
 
-                if pdf_text:
-                    st.subheader(f"Search Results for '{search_words}:")
+            if pdf_text:
+                st.subheader(f"Search Results for '{search_words}:")
 
-                    # Initialize variables to store selected page number
-                    # selected_results = st.session_state["selected_results"] # Access from session state
-                    # selected_csv_data = st.session_state["selected_csv_data"]
+                # Initialize variables to store selected page number
+                # selected_results = st.session_state["selected_results"] # Access from session state
+                # selected_csv_data = st.session_state["selected_csv_data"]
 
-                    # Loop through the results
-                    for i, result in enumerate(pdf_text):
-                        with st.container():
-                            st.write(f"Page {result['page_number'] + 1}:")
-                            col1,col2 = st.columns([2,8])
+                # Loop through the results
+                for i, result in enumerate(pdf_text):
+                    with st.container():
+                        st.write(f"Page {result['page_number'] + 1}:")
+                        col1,col2 = st.columns([2,8])
 
-                            with col1:
-                                st.write(f"Page {result['page_number'] + 1}")
-                                
-                            # Image and text in the second column
-                            with col2:
-                                image = Image.open(os.path.join(BASE_DIR, result['thumbnail_path']))
-                                st.image(image, caption=f"Page {result['page_number']+ 1} Thumbnail", use_column_width=True)
+                        with col1:
+                            st.write(f"Page {result['page_number'] + 1}")
+                            
+                        # Image and text in the second column
+                        with col2:
+                            image = Image.open(os.path.join(BASE_DIR, result['thumbnail_path']))
+                            st.image(image, caption=f"Page {result['page_number']+ 1} Thumbnail", use_column_width=True)
                       
             # muichiro
             # except Exception as e:
