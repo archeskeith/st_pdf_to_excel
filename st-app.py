@@ -1,9 +1,6 @@
 import streamlit as st
 from PIL import Image
-# import fitz
-# from fitz import *
 import pdfplumber
-# from fitz_fix.fitz import * 
 from PyPDF2 import PdfMerger
 from concurrent.futures import ThreadPoolExecutor
 import os
