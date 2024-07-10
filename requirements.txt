@@ -1,4 +1,5 @@
 numpy==1.24.3  # Or a version known to be compatible with pandas==1.4.4
+libtesseract-dev
 boto3
 pdfplumber
 python-dotenv
@@ -7,6 +8,6 @@ pandas==1.4.4
 Pillow==9.2.0
 pytesseract==0.3.10
 tesseract-ocr
-libtesseract-dev
+
 ocrmypdf
 openai==0.28.0
