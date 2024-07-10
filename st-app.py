@@ -1,12 +1,7 @@
 import streamlit as st
 from PIL import Image
-# import fitz
-# from fitz import *
 import pdfplumber
 import PyPDF2
-# from fitz_fix.fitz import * 
-# from PyPDF2 import PdfMerger  # Replace with the following
-# from PyPDF2.pdfmerger import PdfMerger
 from concurrent.futures import ThreadPoolExecutor
 import os
 import pandas as pd
@@ -110,7 +105,6 @@ def string_to_csv(input_string):
 #             st.error(f"OCR Error on page {page.number}:{e}")
 #             text = ""
 
-#     pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
 #     thumbnail_path = os.path.join(THUMBNAILS_DIR, f'page_{page.number}_thumbnail.jpg')
 #     pix.save(thumbnail_path)
 
@@ -284,7 +278,6 @@ def search_pdfs(pdf_files, search_words, excel_file=None):
 #         temp_pdf_path = temp_pdf.name
     
 #     # open merged pdf or single pdf
-#     doc = fitz.open(temp_pdf_path)
 
 #     # search logic using ThreadPoolExecutor (parallelism)
 #     results = []
