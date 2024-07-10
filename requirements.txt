@@ -2,6 +2,7 @@ PyPDF2
 pandas
 pillow
 pytesseract
+tesseract
 ocrmypdf
 openai
 pdfplumber==0.11.2
