@@ -15,25 +15,39 @@ import openai
 import base64
 from io import StringIO
 import csv
-
+import subprocess
 from dotenv import load_dotenv
 load_dotenv()
 
 
 import shutil
 
-if shutil.which("gs") is None:
-    st.error("Ghostscript is not installed or not in PATH")
-else:
-    st.success("Ghostscript is installed and available in PATH")
-# Ensure external programs are installed
-if shutil.which("gs") is None:
-    os.system("sudo apt-get update")
-    os.system("sudo apt-get install -y ghostscript")
+# Ensure ghostscript is installed and available in PATH
+def check_ghostscript():
+    if shutil.which("gs") is None:
+        st.error("Ghostscript is not installed or not in PATH")
+        os.system("sudo apt-get update && sudo apt-get install -y ghostscript")
 
-if shutil.which("tesseract") is None:
-    os.system("sudo apt-get update")
-    os.system("sudo apt-get install -y libtesseract-dev tesseract-ocr tesseract-ocr-por libleptonica-dev")
+        # Recheck after installation
+        if shutil.which("gs") is None:
+            st.error("Ghostscript is still not installed or not in PATH after installation attempt")
+        else:
+            st.success("Ghostscript is now installed and available in PATH")
+    else:
+        st.success("Ghostscript is installed and available in PATH")
+
+# Call the function to check ghostscript
+check_ghostscript()
+
+# Log environment variables for debugging
+st.write("Environment PATH:", os.environ["PATH"])
+
+# Test running a simple ghostscript command to verify functionality
+try:
+    result = subprocess.run(["gs", "--version"], capture_output=True, text=True)
+    st.write("Ghostscript version:", result.stdout)
+except Exception as e:
+    st.error(f"Failed to run ghostscript: {e}")
 
 import ocrmypdf
 
