@@ -9,7 +9,7 @@ pandas==1.4.4
 Pillow==9.2.0
 
 # OCR and Table Extraction
-tesseract~=5.3.1
+# tesseract~=5.3.1
 ocrmypdf
 
 # OpenAI API
