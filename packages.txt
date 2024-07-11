@@ -1,4 +1,4 @@
-ghostscript==9.55.3
+ghostscript
 swig
 python3-dev
 libtesseract-dev
