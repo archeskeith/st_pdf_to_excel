@@ -22,6 +22,9 @@ load_dotenv()
 
 import shutil
 
+
+import ocrmypdf
+
 # Ensure ghostscript is installed and available in PATH
 def check_ghostscript():
     if shutil.which("gs") is None:
@@ -49,9 +52,17 @@ try:
 except Exception as e:
     st.error(f"Failed to run ghostscript: {e}")
 
-import ocrmypdf
+# Additional debug logging for ocrmypdf
+def check_ocrmypdf_dependencies():
+    dependencies = ["tesseract", "gs"]
+    for dep in dependencies:
+        path = shutil.which(dep)
+        if path:
+            st.write(f"Found {dep} at {path}")
+        else:
+            st.write(f"Missing dependency: {dep}")
 
-
+check_ocrmypdf_dependencies()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # get the directory where the script is running
