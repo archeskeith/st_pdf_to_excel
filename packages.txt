@@ -2,5 +2,6 @@ swig
 python3-dev
 libtesseract-dev
 tesseract-ocr
+tesseract-ocr-por
 libtesseract-dev
 libleptonica-dev
