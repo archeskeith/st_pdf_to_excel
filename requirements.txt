@@ -1,6 +1,6 @@
 numpy==1.24.3
 pandas
-
+boto3
 # PDF Manipulation
 PyPDF2==3.0.1
 pdfplumber
