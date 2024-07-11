@@ -1,5 +1,5 @@
 import streamlit as st
-import gs
+# import gs
 from PIL import Image
 import pdfplumber
 import PyPDF2
