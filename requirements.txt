@@ -1,11 +1,11 @@
 numpy
+pandas
+
 # PDF Manipulation
 PyPDF2==3.0.1
 pdfplumber
 
 # Data Analysis
-pandas==1.4.4
-
 # Image Processing
 Pillow==9.2.0
 
