@@ -7,7 +7,7 @@ import PyPDF2
 from concurrent.futures import ThreadPoolExecutor
 import os
 import pandas as pd
-import boto3
+# import boto3
 import tempfile
 import time
 from concurrent.futures import as_completed
