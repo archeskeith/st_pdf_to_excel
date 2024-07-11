@@ -1,4 +1,6 @@
 import streamlit as st
+import ghostscript
+import gs
 from PIL import Image
 import pdfplumber
 import PyPDF2
