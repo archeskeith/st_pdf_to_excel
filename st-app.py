@@ -15,9 +15,23 @@ import openai
 import base64
 from io import StringIO
 import csv
-import ocrmypdf
+
 from dotenv import load_dotenv
 load_dotenv()
+
+
+import shutil
+# Ensure external programs are installed
+if shutil.which("gs") is None:
+    os.system("sudo apt-get update")
+    os.system("sudo apt-get install -y ghostscript")
+
+if shutil.which("tesseract") is None:
+    os.system("sudo apt-get update")
+    os.system("sudo apt-get install -y libtesseract-dev tesseract-ocr tesseract-ocr-por libleptonica-dev")
+
+import ocrmypdf
+
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
