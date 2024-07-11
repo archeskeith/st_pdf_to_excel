@@ -21,6 +21,11 @@ load_dotenv()
 
 
 import shutil
+
+if shutil.which("gs") is None:
+    st.error("Ghostscript is not installed or not in PATH")
+else:
+    st.success("Ghostscript is installed and available in PATH")
 # Ensure external programs are installed
 if shutil.which("gs") is None:
     os.system("sudo apt-get update")
