@@ -24,12 +24,11 @@ import shutil
 
 
 import ocrmypdf
-
 # Ensure ghostscript is installed and available in PATH
 def check_ghostscript():
     if shutil.which("gs") is None:
         st.error("Ghostscript is not installed or not in PATH")
-        os.system("sudo apt-get update && sudo apt-get install -y ghostscript")
+        os.system("/usr/local/bin/brew install ghostscript")
 
         # Recheck after installation
         if shutil.which("gs") is None:
