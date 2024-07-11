@@ -1,13 +1,16 @@
-numpy
-# imagemagick
-boto3
+# PDF Manipulation
+PyPDF2==3.0.1
 pdfplumber
-python-dotenv
-PyPDF2
-pandas==1.4.4
-Pillow==9.2.0
-pytesseract==0.3.10
-tesseract-ocr
 
+# Data Analysis
+pandas==1.4.4
+
+# Image Processing
+Pillow==9.2.0
+
+# OCR and Table Extraction
+tesseract~=5.3.1
 ocrmypdf
-openai==0.28.0
+
+# OpenAI API
+openai==0.28.0 # Add an explicit version
