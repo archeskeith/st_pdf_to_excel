@@ -63,6 +63,22 @@ def check_ocrmypdf_dependencies():
             st.write(f"Missing dependency: {dep}")
 
 check_ocrmypdf_dependencies()
+
+# Function to run a simple ocrmypdf command for debugging
+def run_simple_ocrmypdf_test(input_pdf, output_pdf):
+    try:
+        result = subprocess.run(
+            ["ocrmypdf", "--deskew", input_pdf, output_pdf],
+            capture_output=True,
+            text=True
+        )
+        st.write("ocrmypdf output:", result.stdout)
+        st.write("ocrmypdf errors:", result.stderr)
+    except Exception as e:
+        st.error(f"ocrmypdf test failed: {e}")
+
+# Run a simple ocrmypdf test
+run_simple_ocrmypdf_test("example.pdf", "example_ocr.pdf")
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # get the directory where the script is running
