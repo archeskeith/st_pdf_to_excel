@@ -1,5 +1,5 @@
 ghostscript
-gs
+pytesseract
 swig
 python3-dev
 libtesseract-dev
