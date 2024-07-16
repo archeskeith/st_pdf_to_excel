@@ -4,7 +4,7 @@ python-dotenv
 # PDF Manipulation
 PyPDF2==3.0.1
 pdfplumber
-gs
+ghostcript
 # Data Analysis
 # Image Processing
 Pillow==9.2.0
