@@ -30,13 +30,13 @@ markdown-it-py==3.0.0
 MarkupSafe==2.1.5
 mdurl==0.1.2
 numpy==2.0.0
-ocrmypdf
+ocrmypdf==16.4.2
 openai==1.35.13
 packaging==24.1
 pandas==2.2.2
 pdf2image==1.17.0
-pdfminer.six
-pdfplumber
+pdfminer.six==20231228
+pdfplumber==0.11.2
 pi_heif==0.17.0
 pikepdf==9.0.0
 pillow==10.4.0
@@ -48,6 +48,7 @@ pydantic==2.8.2
 pydantic_core==2.20.1
 pydeck==0.9.1
 Pygments==2.18.0
+pypdf==4.3.1
 PyPDF2==3.0.1
 pypdfium2==4.30.0
 pytesseract==0.3.10
