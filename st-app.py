@@ -30,7 +30,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
-st.write(f"pdf2image version: {pdf2image.__version__}")  
+# st.write(f"pdf2image version: {pdf2image.__version__}")  
 # get the directory where the script is running
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.join(BASE_DIR,'app_data')
