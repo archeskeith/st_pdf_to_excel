@@ -39,7 +39,7 @@ pdfminer.six==20231228
 pdfplumber==0.11.2
 pi_heif==0.17.0
 pikepdf==9.0.0
-pillow==10.4.0
+Pillow==9.5.0
 pluggy==1.5.0
 protobuf==5.27.2
 pyarrow==16.1.0
@@ -50,7 +50,6 @@ pydeck==0.9.1
 Pygments==2.18.0
 pypdf==4.3.1
 PyPDF2==3.0.1
-pdf2image
 pypdfium2==4.30.0
 pytesseract==0.3.10
 python-dateutil==2.9.0.post0
