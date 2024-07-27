@@ -54,20 +54,20 @@ os.makedirs(os.path.join(BASE_DIR, "uploads"), exist_ok=True)
 GLOBAL_EXCEL_FILE_URL = None
 # current_dir = os.getcwd()
 
-# Function to get Poppler version
-def get_poppler_version():
-    try:
-        result = subprocess.run(["pdfinfo", "-v"], capture_output=True, text=True)
-        if result.returncode == 0:
-            return result.stdout.split('\n')[0]  # Extract first line (version)
-        else:
-            return "Poppler not found or not in PATH"
-    except FileNotFoundError:
-        return "pdfinfo command not found"
+# # Function to get Poppler version
+# def get_poppler_version():
+#     try:
+#         result = subprocess.run(["pdfinfo", "-v"], capture_output=True, text=True)
+#         if result.returncode == 0:
+#             return result.stdout.split('\n')[0]  # Extract first line (version)
+#         else:
+#             return "Poppler not found or not in PATH"
+#     except FileNotFoundError:
+#         return "pdfinfo command not found"
 
-# Display Poppler version in Streamlit app
-poppler_version = get_poppler_version()
-st.write(f"Poppler version: {poppler_version}")
+# # Display Poppler version in Streamlit app
+# poppler_version = get_poppler_version()
+# st.write(f"Poppler version: {poppler_version}")
 
 def update_selected_pages(page_num):
     if page_num in st.session_state.selected_results:
@@ -268,8 +268,8 @@ def extract_table_with_openai(result, model="gpt-4o-mini"):
         # st.write(response.choices[0].message.content)
         message_content = response.choices[0].message.content
         # print("MUICHIRO ",message_content)
-        st.write(message_content)
-        st.write(string_to_csv(message_content))
+        # st.write(message_content)
+        # st.write(string_to_csv(message_content))
         headers, rows = final_string_to_csv(message_content)
         headers, rows = remove_newlines(headers, rows) 
         # Write the CSV file (add header first, then rows)
@@ -413,7 +413,7 @@ with st.form('searchForm'):
                     # Loop through the results
                     for i, result in enumerate(pdf_text):
                         with st.container():
-                            st.write(f"Page {result['page_number'] + 1}:")
+                            # st.write(f"Page {result['page_number'] + 1}:")
                             col1,col2 = st.columns([2,8])
 
                             with col1:
@@ -517,7 +517,7 @@ with st.form('extractionForm'):
                     st.info("No tables found in selected pages.")  # Updated message
 
             except Exception as e:  # Catch more general exceptions
-                st.write('it passed here')
+                # st.write('it passed here')
                 st.error(f"Error extracting CSV: {e}")
 
 if st.session_state.get("show_download_button",False):
