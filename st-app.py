@@ -175,7 +175,13 @@ def extract_text_from_page(page_num, pdf_path):
             break  # Exit the loop after processing the desired page
 
     # Create thumbnail using pdf2image
-    images = convert_from_path(pdf_path, first_page=page_num+1, last_page=page_num+1)
+    
+    images = convert_from_path(
+        pdf_path, 
+        first_page=page_num+1, 
+        last_page=page_num+1, 
+        poppler_path="/home/linuxbrew/.linuxbrew/bin/pdfinfo"  # Set the Poppler path for Streamlit Cloud
+    )  
     thumbnail_path = os.path.join(THUMBNAILS_DIR, f'page_{page_num + 1}_thumbnail.png')
     images[0].save(thumbnail_path, "PNG")
 
