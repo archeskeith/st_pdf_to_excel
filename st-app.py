@@ -413,8 +413,8 @@ with st.form('searchForm'):
                     # Loop through the results
                     for i, result in enumerate(pdf_text):
                         with st.container():
-                            st.write("Page")
-                            # st.write(f"Page {result['page_number'] + 1}:")
+                            # st.write("Page")
+                            st.write(f"Page {result['page_number'] + 1}:")
                             col1,col2 = st.columns([2,8])
 
                             with col1:
