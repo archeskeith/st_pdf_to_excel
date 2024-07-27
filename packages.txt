@@ -3,3 +3,5 @@ python3-dev
 libtesseract-dev
 libleptonica-dev
 poppler-utils
+tesseract-ocr
+tesseract-ocr-eng
