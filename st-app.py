@@ -22,6 +22,7 @@ import openai
 from openai import OpenAI # Add this line of code
 import base64
 from io import StringIO
+import subprocess
 import csv
 import ocrmypdf
 from pdfminer.layout import LTChar
@@ -45,10 +46,24 @@ os.makedirs(os.path.join(BASE_DIR, "output"), exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR,"static"),exist_ok=True)
 os.makedirs(os.path.join(STATIC_DIR, "thumbnails"), exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR, "uploads"), exist_ok=True)
-os.environ["POPPLER_PATH"] = "/home/linuxbrew/.linuxbrew/bin"
 
 GLOBAL_EXCEL_FILE_URL = None
 # current_dir = os.getcwd()
+
+# Function to get Poppler version
+def get_poppler_version():
+    try:
+        result = subprocess.run(["pdfinfo", "-v"], capture_output=True, text=True)
+        if result.returncode == 0:
+            return result.stdout.split('\n')[0]  # Extract first line (version)
+        else:
+            return "Poppler not found or not in PATH"
+    except FileNotFoundError:
+        return "pdfinfo command not found"
+
+# Display Poppler version in Streamlit app
+poppler_version = get_poppler_version()
+st.write(f"Poppler version: {poppler_version}")
 
 def update_selected_pages(page_num):
     if page_num in st.session_state.selected_results:
@@ -179,7 +194,7 @@ def extract_text_from_page(page_num, pdf_path):
 
     # Create thumbnail using pdf2image
     
-    images = convert_from_path(pdf_path, first_page=page_num+1, last_page=page_num+1,poppler_path="/home/linuxbrew/.linuxbrew/bin")
+    images = convert_from_path(pdf_path, first_page=page_num+1, last_page=page_num+1, poppler_path="/home/linuxbrew/.linuxbrew/bin")  # Set the Poppler path from the output
     
     thumbnail_path = os.path.join(THUMBNAILS_DIR, f'page_{page_num + 1}_thumbnail.png')
     images[0].save(thumbnail_path, "PNG")
