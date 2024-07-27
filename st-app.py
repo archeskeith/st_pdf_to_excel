@@ -51,7 +51,7 @@ os.makedirs(os.path.join(BASE_DIR,"static"),exist_ok=True)
 os.makedirs(os.path.join(STATIC_DIR, "thumbnails"), exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR, "uploads"), exist_ok=True)
 
-GLOBAL_EXCEL_FILE_URL = None
+# GLOBAL_EXCEL_FILE_URL = None
 # current_dir = os.getcwd()
 
 # # Function to get Poppler version
@@ -368,8 +368,8 @@ def merge_pdfs(pdf_files, output_path):
     # Write the merged PDF to the output path
     with open(output_path, "wb") as output_pdf:
         merger.write(output_pdf)
-
-def search_pdfs(pdf_files, search_words, excel_file=None):
+# excel_file=None
+def search_pdfs(pdf_files, search_words):
     """Searches for keywords in uploaded PDF files and returns results."""
 
     # Merge PDFs if necessary
