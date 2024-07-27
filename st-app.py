@@ -419,7 +419,7 @@ if "pdf_text" not in st.session_state:
 
 with st.form('searchForm'):
     pdf_files = st.file_uploader("Upload PDF Files:",accept_multiple_files=True)
-    excel_file = st.file_uploader("Upload Excel File:",type=['xlsx','xls'],key="excel_file")
+    # excel_file = st.file_uploader("Upload Excel File:",type=['xlsx','xls'],key="excel_file")
 
     # using same names as in the original code
     search_words = st.text_input("Search Words:")
@@ -459,14 +459,14 @@ with st.form('searchForm'):
                     
             except Exception as e:
                 st.error(f"Error processing PDFs: {e}")
-        if excel_file is not None:
-            try:
-                save_path = os.path.join(UPLOADS_DIR,excel_file.name)
-                with open(save_path,"wb") as f:
-                    f.write(excel_file.read())
-                GLOBAL_EXCEL_FILE_URL = f"/uploads/{excel_file.name}"
-            except Exception as e:
-                st.error(f"Error uploading Excel file: {e}")
+        # if excel_file is not None:
+        #     try:
+        #         save_path = os.path.join(UPLOADS_DIR,excel_file.name)
+        #         with open(save_path,"wb") as f:
+        #             f.write(excel_file.read())
+        #         GLOBAL_EXCEL_FILE_URL = f"/uploads/{excel_file.name}"
+        #     except Exception as e:
+        #         st.error(f"Error uploading Excel file: {e}")
 
 
 # Add a new form for page selection
