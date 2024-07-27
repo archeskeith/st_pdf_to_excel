@@ -44,6 +44,7 @@ os.makedirs(os.path.join(BASE_DIR, "output"), exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR,"static"),exist_ok=True)
 os.makedirs(os.path.join(STATIC_DIR, "thumbnails"), exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR, "uploads"), exist_ok=True)
+os.environ["POPPLER_PATH"] = "/home/linuxbrew/.linuxbrew/bin/pdfinfo"
 
 GLOBAL_EXCEL_FILE_URL = None
 # current_dir = os.getcwd()
