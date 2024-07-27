@@ -413,11 +413,13 @@ with st.form('searchForm'):
                     # Loop through the results
                     for i, result in enumerate(pdf_text):
                         with st.container():
-                            st.write(f"Page {result['page_number'] + 1}:")
+                            print('nothing again')
+                            # st.write(f"Page {result['page_number'] + 1}:")
                             col1,col2 = st.columns([2,8])
 
                             with col1:
-                                st.write(f"Page {result['page_number'] + 1}")
+                                # st.write(f"Page {result['page_number'] + 1}") 
+                                print('try nothing')
                                 
                             # Image and text in the second column
                             with col2:
