@@ -152,13 +152,12 @@ def remove_newlines(headers, rows):
 
     return clean_headers, clean_rows
 
-
-
 def final_string_to_csv(input_string):
     """Converts a string with '|' and '\n' delimiters into CSV format.
 
     This function removes commas from numeric values, handles newlines, and
-    removes newline characters from string values.
+    removes newline characters from string values, including those
+    within numbers.
     """
     rows = input_string.splitlines()
 
@@ -168,14 +167,15 @@ def final_string_to_csv(input_string):
         columns = row.split("|")
         processed_columns = []
         for col in columns:
+            # Remove newlines and forward slashes from strings
             if isinstance(col, str):
-                col = col.replace('\n', '')  # Remove newlines from strings
-                try:
-                    processed_columns.append(int(col.replace(",", "")))  # Remove commas and convert to integer
-                except ValueError:
-                    processed_columns.append(col)  # Not an integer, keep as string
-            else:
-                processed_columns.append(col)  # If not a string, keep the original value
+                col = col.replace("\n", "").replace("/", "")
+            try:
+                # Remove commas and convert to integer if possible
+                processed_columns.append(int(col.replace(",", "")))
+            except ValueError:
+                # Keep the cell as a string if conversion fails
+                processed_columns.append(col)
 
         processed_rows.append(processed_columns)
 
@@ -183,6 +183,36 @@ def final_string_to_csv(input_string):
     rows = processed_rows[1:]  # Extract data rows
 
     return headers, rows
+
+# def final_string_to_csv(input_string):
+#     """Converts a string with '|' and '\n' delimiters into CSV format.
+
+#     This function removes commas from numeric values, handles newlines, and
+#     removes newline characters from string values.
+#     """
+#     rows = input_string.splitlines()
+
+#     # Preprocess rows to remove commas from numeric values and '\n' from strings
+#     processed_rows = []
+#     for row in rows:
+#         columns = row.split("|")
+#         processed_columns = []
+#         for col in columns:
+#             if isinstance(col, str):
+#                 col = col.replace('\n', '')  # Remove newlines from strings
+#                 try:
+#                     processed_columns.append(int(col.replace(",", "")))  # Remove commas and convert to integer
+#                 except ValueError:
+#                     processed_columns.append(col)  # Not an integer, keep as string
+#             else:
+#                 processed_columns.append(col)  # If not a string, keep the original value
+
+#         processed_rows.append(processed_columns)
+
+#     headers = processed_rows[0]  # Extract headers
+#     rows = processed_rows[1:]  # Extract data rows
+
+#     return headers, rows
 
 def extract_text_from_page(page_num, pdf_path):
     """Extracts text and thumbnail from a PDF page using pdfminer.six and pdf2image."""
