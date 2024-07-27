@@ -7,7 +7,8 @@ from PIL import Image
 # from fitz import *
 import pdfplumber
 # from fitz_fix.fitz import * 
-from PyPDF2 import PdfMerger
+from pypdf import PdfMerger
+# from PyPDF2 import PdfMerger
 from concurrent.futures import ThreadPoolExecutor
 import os
 import pandas as pd
