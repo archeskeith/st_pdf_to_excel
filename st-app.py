@@ -1,83 +1,30 @@
 import streamlit as st
-# import gs
+from pdfminer.high_level import extract_pages
+from pdfminer.layout import LTTextContainer,LTFigure
+import pytesseract
 from PIL import Image
+# import fitz
+# from fitz import *
 import pdfplumber
-import PyPDF2
+# from fitz_fix.fitz import * 
+from PyPDF2 import PdfMerger
 from concurrent.futures import ThreadPoolExecutor
 import os
 import pandas as pd
-# import boto3
+import boto3
 import tempfile
 import time
 from concurrent.futures import as_completed
 from PIL import Image
 import openai
+from openai import OpenAI # Add this line of code
 import base64
 from io import StringIO
 import csv
-import subprocess
+import ocrmypdf
 from dotenv import load_dotenv
 load_dotenv()
 
-
-import shutil
-
-
-import ocrmypdf
-# Ensure ghostscript is installed and available in PATH
-def check_ghostscript():
-    if shutil.which("gs") is None:
-        st.error("Ghostscript is not installed or not in PATH")
-        os.system("/usr/local/bin/brew install ghostscript")
-
-        # Recheck after installation
-        if shutil.which("gs") is None:
-            st.error("Ghostscript is still not installed or not in PATH after installation attempt")
-        else:
-            st.success("Ghostscript is now installed and available in PATH")
-    else:
-        st.success("Ghostscript is installed and available in PATH")
-
-# Call the function to check ghostscript
-check_ghostscript()
-
-# Log environment variables for debugging
-st.write("Environment PATH:", os.environ["PATH"])
-
-# Test running a simple ghostscript command to verify functionality
-try:
-    result = subprocess.run(["gs", "--version"], capture_output=True, text=True)
-    st.write("Ghostscript version:", result.stdout)
-except Exception as e:
-    st.error(f"Failed to run ghostscript: {e}")
-
-# Additional debug logging for ocrmypdf
-def check_ocrmypdf_dependencies():
-    dependencies = ["tesseract", "gs"]
-    for dep in dependencies:
-        path = shutil.which(dep)
-        if path:
-            st.write(f"Found {dep} at {path}")
-        else:
-            st.write(f"Missing dependency: {dep}")
-
-check_ocrmypdf_dependencies()
-
-# Function to run a simple ocrmypdf command for debugging
-def run_simple_ocrmypdf_test(input_pdf, output_pdf):
-    try:
-        result = subprocess.run(
-            ["ocrmypdf", "--deskew", input_pdf, output_pdf],
-            capture_output=True,
-            text=True
-        )
-        st.write("ocrmypdf output:", result.stdout)
-        st.write("ocrmypdf errors:", result.stderr)
-    except Exception as e:
-        st.error(f"ocrmypdf test failed: {e}")
-
-# Run a simple ocrmypdf test
-run_simple_ocrmypdf_test("example.pdf", "example_ocr.pdf")
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # get the directory where the script is running
@@ -88,7 +35,7 @@ BASE_DIR = os.path.join(BASE_DIR,'app_data')
 OUTPUT_DIR = os.path.join(BASE_DIR,"output")
 STATIC_DIR = os.path.join(BASE_DIR,"static")
 UPLOADS_DIR = os.path.join(BASE_DIR,"uploads")
-THUMBNAILS_DIR = os.path.join(STATIC_DIR,"thumbnails")
+THUMBNAILS_DIR = os.path.join(STATIC_DIR, "thumbnails") 
 # construct paths relative to the base directory (create if they don't exist yet)
 os.makedirs(os.path.join(BASE_DIR, "output"), exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR,"static"),exist_ok=True)
@@ -125,6 +72,7 @@ def string_to_csv(input_string):
         # Remove extra spaces, remove commas, and convert to int for numeric values
         # cleaned_row = [entry.strip().replace(',', '') for entry in row]
         cleaned_row = [entry.strip().replace(",",'') if isinstance(entry,str) else entry for entry in row] 
+        cleaned_row = [entry.strip().replace(",","") if isinstance(entry,str) else entry for entry in row] 
 
         if i == 0:
             # The first row is considered the header
@@ -139,9 +87,9 @@ def string_to_csv(input_string):
             # Append the cleaned row to the list of rows
             csv_rows.append(cleaned_row)
 
-    for x in headers:
-        print(x)
-        print(type(x))
+    # for x in headers:
+    #     # print(x)
+    #     # print(type(x))
     # Remove the newline in headers and rows
     # headers = [header.replace('\n', '') for header in headers]
     # csv_rows = [[cell.replace('\n', '') for cell in row] for row in csv_rows]
@@ -149,138 +97,170 @@ def string_to_csv(input_string):
     # Remove '\n' from headers and rows before returning (only for string values)
     headers = [header.replace('/n', '') if isinstance(header, str) else header for header in headers]
     csv_rows = [[cell.replace('/n', '') if isinstance(cell, str) else cell for cell in row] for row in csv_rows]
-
+    print(headers)
+    print(csv_rows)
     return headers, csv_rows
 
+def remove_newlines(headers, rows):
+    """Removes newline characters (\n or /n) from headers and rows in a CSV structure, even if within numbers."""
+    def clean_cell(cell):
+        """Helper function to clean a single cell."""
+        if isinstance(cell, str):
+            return cell.replace("\n", "").replace("/", "")
+        return cell
 
-# def extract_text_from_page(page):
-#     # Extract text and thumbnail from a PDF page (try to extract text directly first)
-#     text = page.get_text()
-#     if text.strip() == "":  # If no text is extracted (likely an image-based pdf)
-#         pix = page.get_pixmap()
-#         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-#         try:
-#             text = pytesseract.image_to_string(img)
-#         except pytesseract.TesseractError as e:
-#             st.error(f"OCR Error on page {page.number}:{e}")
-#             text = ""
+    # Clean headers
+    clean_headers = [clean_cell(header) for header in headers]
 
-#     thumbnail_path = os.path.join(THUMBNAILS_DIR, f'page_{page.number}_thumbnail.jpg')
-#     pix.save(thumbnail_path)
+    # Clean rows (and try converting to numbers after cleaning)
+    clean_rows = []
+    for row in rows:
+        processed_row = [clean_cell(cell) for cell in row]
+        try:
+            processed_row = [
+                int(cell.replace(",", "")) if isinstance(cell, str) and cell.replace(",", "").replace(".", "").isdigit() 
+                else cell
+                for cell in processed_row
+            ]
+        except ValueError:
+            pass  # Keep the cell as a string if conversion fails
+        clean_rows.append(processed_row)
 
-#     return {
-#         'page_number': page.number,
-#         'text': text,
-#         'explanation': 'Explanation placeholder',
-#         'thumbnail_path': f'static/thumbnails/page_{page.number}_thumbnail.jpg',
-#     }
+    return clean_headers, clean_rows
 
+
+
+def final_string_to_csv(input_string):
+    """Converts a string with '|' and '\n' delimiters into CSV format.
+
+    This function removes commas from numeric values, handles newlines, and
+    removes newline characters from string values.
+    """
+    rows = input_string.splitlines()
+
+    # Preprocess rows to remove commas from numeric values and '\n' from strings
+    processed_rows = []
+    for row in rows:
+        columns = row.split("|")
+        processed_columns = []
+        for col in columns:
+            if isinstance(col, str):
+                col = col.replace('\n', '')  # Remove newlines from strings
+                try:
+                    processed_columns.append(int(col.replace(",", "")))  # Remove commas and convert to integer
+                except ValueError:
+                    processed_columns.append(col)  # Not an integer, keep as string
+            else:
+                processed_columns.append(col)  # If not a string, keep the original value
+
+        processed_rows.append(processed_columns)
+
+    headers = processed_rows[0]  # Extract headers
+    rows = processed_rows[1:]  # Extract data rows
+
+    return headers, rows
 
 def extract_text_from_page(page_num, pdf_path):
-    """Extracts text and thumbnail from a PDF page using pdfplumber."""
+    """Extracts text and thumbnail from a PDF page using pdfminer.six and pdf2image."""
+    from pdfminer.layout import LTChar
+    from pdf2image import convert_from_path
 
-    with pdfplumber.open(pdf_path) as pdf:
-        page = pdf.pages[page_num]
-        
-        # Try table extraction first
-        tables = page.extract_tables()
-        if tables:
-            st.write(f"Tables found on page {page_num + 1}")
-            return {
-                'page_number': page_num,
-                'text': "",  # Or you can include some table summary here
-                'tables': tables,
-                'thumbnail_path': f'static/thumbnails/page_{page_num + 1}_thumbnail.png',
-            }
+    with open(pdf_path, 'rb') as file:
+        for page_layout in extract_pages(file, page_numbers=[page_num]):
+            text = ""
+            for element in page_layout:
+                if isinstance(element, LTTextContainer):
+                    text += element.get_text()
+            break  # Exit the loop after processing the desired page
 
-        # If no tables found, fall back to text extraction (OCR if needed)
-        text = page.extract_text(x_tolerance=3, y_tolerance=3, use_text_flow=False, text_layout=True)
-
-    # Create thumbnail
-    im = page.to_image(resolution=150)
+    # Create thumbnail using pdf2image
+    images = convert_from_path(pdf_path, first_page=page_num+1, last_page=page_num+1)
     thumbnail_path = os.path.join(THUMBNAILS_DIR, f'page_{page_num + 1}_thumbnail.png')
-    im.save(thumbnail_path, format="PNG") 
+    images[0].save(thumbnail_path, "PNG")
+
+    # If no text, try OCR
+    if not text.strip():
+        text = pytesseract.image_to_string(images[0])
 
     return {
         'page_number': page_num,
         'text': text,
-        'explanation': 'Explanation placeholder',
         'thumbnail_path': f'static/thumbnails/page_{page_num + 1}_thumbnail.png', 
     }
 
 
-def extract_table_with_openai(result, model="gpt-4o"):
-    """Extracts tabular data using OpenAI API for a given page number within the search results."""
+def extract_table_with_openai(result, model="gpt-4o-mini"):
+    """Extracts tabular data using OpenAI API for a given page number."""
+    # st.write("RESULT: ",result)
+    # print('try')
+    page_num = int(result["page_number"])
+    # print('obanai')
 
-    page_num = result["page_number"]
     thumbnail_path = result["thumbnail_path"]
-
     image_path = os.path.join(BASE_DIR, thumbnail_path)
 
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+    # Prepare the image data as base64 string
     with open(image_path, "rb") as image_file:
-        image_data = image_file.read()
-        base64_image = base64.b64encode(image_data).decode("utf-8")  # Encode to base64
+        base64_image = base64.b64encode(image_file.read()).decode('utf-8')
 
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=model,
             messages=[
-                {
-                    "role": "system",
-                    "content": "You will be provided with an image of a table. Please extract the data from the table and provide it in CSV format.",
-                },
+                {"role": "system", "content": "You are a helpful assistant that can extract data from tables in images."},
                 {
                     "role": "user",
-                    "content": [
-                        {"type": "text", "text": "Please extract the data from the table in the image and provide it in CSV format. Copy as much as possible the text provided, but add in | (for new columns) and /n (for new rows), according to how it looks like on the image. Indicate '/n' if a new row is seen. Make sure years are directly aligned with the columns they are placed at (IMPORTANT). Do it directly, no need to respond, just do the table. Make sure the output really looks like the table shown in the picture"},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
-                    ],
+                    "content": (
+                        "Please extract the data from the following text and provide it in CSV format. Copy as much as possible the text provided, but add in |"
+                        "(for new columns) and \\n (for new rows), according to how it looks like in the text. Indicate '\\n' if a new row is seen."
+                        "Make sure years are directly aligned with the columns they are placed at (IMPORTANT)."
+                        "Do it directly, no need to respond, just do the table."
+                        "Make sure the output really looks like the table shown in the text.\n\n" 
+                        + str(result['text']) # Convert the result to string 
+                    )
                 },
+                {"role": "user", "content": [
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                ]}
             ]
         )
-        extracted_table_data = response["choices"][0]["message"]["content"]
-        if extracted_table_data == "No table found":
-            st.warning(f"No table found on page {result['page_number'] + 1}")
-            return None
-
-        # Normalize and Clean the extracted data
-        extracted_table_data = extracted_table_data.replace("\r\n", "\n").replace("\r", "\n")
-        
-        # Remove empty values from the table
-        extracted_table_data = "\n".join([line for line in extracted_table_data.splitlines() if line.strip()])
-        
-        # print(extracted_table_data)
-        headers, csv_rows = string_to_csv(extracted_table_data)
-        st.write(headers)
-        st.write(csv_rows)
-
+        # print(response)
+        # st.write(response.choices[0].message.content)
+        message_content = response.choices[0].message.content
+        # print("MUICHIRO ",message_content)
+        st.write(message_content)
+        st.write(string_to_csv(message_content))
+        headers, rows = final_string_to_csv(message_content)
+        headers, rows = remove_newlines(headers, rows) 
         # Write the CSV file (add header first, then rows)
-        with open(
-            os.path.join(OUTPUT_DIR, f"page_{page_num + 1}.csv"),
-            "w",
-            newline="",
-            encoding="utf-8",
-        ) as csvfile:
+        filename = f"page_{page_num + 1}.csv"
+        with open(filename, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(headers)
-            writer.writerows(csv_rows)
+            writer.writerows(rows)
 
-        st.success(f"CSV File page_{page_num + 1}.csv has been extracted.")
-        return f"page_{page_num + 1}.csv"  # This should be the returned file name
-        # return pd.read_csv(StringIO(extracted_table_data), lineterminator='\n')
-        # return extracted_table_data
-    except openai.error.OpenAIError as e:  # Moved here
+
+        # print(response.choices[0])
+        return None
+        # return(response.choices[0].messsage.content)
+    # Error handling
+    except openai.OpenAIError as e:
         st.error(f"OpenAI API Error on page {page_num + 1}: {e}")
         return None
-    except pd.errors.EmptyDataError:  # Catch empty CSV data
+    except FileNotFoundError as e:
+        st.error(f"File Not Found Error on page {page_num + 1}: {e}")
+        return None
+    except pd.errors.EmptyDataError:
         st.warning(f"Empty table on page {page_num + 1}")
         return None
 
+
+
 def search_pdfs(pdf_files, search_words, excel_file=None):
     output_dir = os.path.join(BASE_DIR, "output")
-    # global_excel_file = os.path.join(output_dir, "new_version.xlsx")
 
-    # Merge PDFs (if multiple files have been uploaded)
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False, dir=BASE_DIR) as temp_pdf:
         if len(pdf_files) > 1:
             merger = PdfMerger()
@@ -291,35 +271,21 @@ def search_pdfs(pdf_files, search_words, excel_file=None):
             temp_pdf.write(pdf_files[0].read())
         temp_pdf_path = temp_pdf.name
 
-        # OCR the temporary PDF file
-        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False, dir=BASE_DIR) as ocr_temp_pdf:
-            ocrmypdf.ocr(temp_pdf_path, ocr_temp_pdf.name, deskew=True)  # Perform OCR
-
-    # Open the OCR'd PDF file
-    with pdfplumber.open(ocr_temp_pdf.name) as pdf:
-        # Search logic using ThreadPoolExecutor (parallelism)
+    with pdfplumber.open(temp_pdf_path) as pdf:
         results = []
         search_words_list = search_words.lower().split()
 
-        with ThreadPoolExecutor() as executor:
-            # Use page_num (0-based indexing) directly in pdfplumber
-            futures = [executor.submit(extract_text_from_page, page_num, ocr_temp_pdf.name) 
-                        for page_num in range(len(pdf.pages))] 
+        for page_num in range(len(pdf.pages)):
+            result = extract_text_from_page(page_num, temp_pdf_path)  
+            result_text = result['text'].lower()
+            if not search_words_list or any(word in result_text for word in search_words_list):
+                results.append(result)
 
-            for future in as_completed(futures):
-                result = future.result()
-                result_text = result['text'].lower()
-                if not search_words_list or any(word in result_text for word in search_words_list):
-                    results.append(result)
-                    # print(result)
-
-
-    # Sort results by page number (add 1 to page_number since it's 0-based in pdfplumber)
     results.sort(key=lambda x: x['page_number'] + 1)
 
     # Remove the temporary PDF files
     os.remove(temp_pdf_path)
-    os.remove(ocr_temp_pdf.name)  # Remove the OCR'd PDF file
+
     return results  
 # def search_pdfs(pdf_files,search_words,excel_file=None):
 #     output_dir = os.path.join(BASE_DIR,"output")
@@ -338,6 +304,7 @@ def search_pdfs(pdf_files, search_words, excel_file=None):
 #         temp_pdf_path = temp_pdf.name
     
 #     # open merged pdf or single pdf
+#     doc = fitz.open(temp_pdf_path)
 
 #     # search logic using ThreadPoolExecutor (parallelism)
 #     results = []
@@ -390,34 +357,34 @@ with st.form('searchForm'):
         if not pdf_files:
             st.warning("Please upload at least one PDF file.")
         else:
-            # try:
-            pdf_text = search_pdfs(pdf_files, search_words, excel_file)
-            st.session_state['pdf_text'] = pdf_text
+            try:
+                pdf_text = search_pdfs(pdf_files, search_words, excel_file)
+                st.session_state['pdf_text'] = pdf_text
 
-            if pdf_text:
-                st.subheader(f"Search Results for '{search_words}:")
+                if pdf_text:
+                    st.subheader(f"Search Results for '{search_words}:")
 
-                # Initialize variables to store selected page number
-                # selected_results = st.session_state["selected_results"] # Access from session state
-                # selected_csv_data = st.session_state["selected_csv_data"]
+                    # Initialize variables to store selected page number
+                    # selected_results = st.session_state["selected_results"] # Access from session state
+                    # selected_csv_data = st.session_state["selected_csv_data"]
 
-                # Loop through the results
-                for i, result in enumerate(pdf_text):
-                    with st.container():
-                        st.write(f"Page {result['page_number'] + 1}:")
-                        col1,col2 = st.columns([2,8])
+                    # Loop through the results
+                    for i, result in enumerate(pdf_text):
+                        with st.container():
+                            st.write(f"Page {result['page_number'] + 1}:")
+                            col1,col2 = st.columns([2,8])
 
-                        with col1:
-                            st.write(f"Page {result['page_number'] + 1}")
-                            
-                        # Image and text in the second column
-                        with col2:
-                            image = Image.open(os.path.join(BASE_DIR, result['thumbnail_path']))
-                            st.image(image, caption=f"Page {result['page_number']+ 1} Thumbnail", use_column_width=True)
+                            with col1:
+                                st.write(f"Page {result['page_number'] + 1}")
+                                
+                            # Image and text in the second column
+                            with col2:
+                                image = Image.open(os.path.join(BASE_DIR, result['thumbnail_path']))
+                                st.image(image, caption=f"Page {result['page_number']+ 1} Thumbnail", use_column_width=True)
                       
-            # muichiro
-            # except Exception as e:
-            #     st.error(f"Error processing PDFs: {e}")
+                    
+            except Exception as e:
+                st.error(f"Error processing PDFs: {e}")
         if excel_file is not None:
             try:
                 save_path = os.path.join(UPLOADS_DIR,excel_file.name)
@@ -440,7 +407,7 @@ with st.form('extractionForm'):
         else:
             pdf_text = st.session_state['pdf_text']
             try:
-                # Split and clean the input, allowing for spaces and empty entries
+            # Split and clean the input, allowing for spaces and empty entries
                 selected_pages = []
                 for x in selected_pages_input.split(","):
                     stripped_x = x.strip()
@@ -454,26 +421,44 @@ with st.form('extractionForm'):
                 selected_pages = list(set(selected_pages))
                 
                 extracted_csv_data = []
+                csv_filenames = []
                 for page_num in selected_pages:
                     csv_filename = f"page_{page_num + 1}.csv"  # Create filename based on page number
+                    csv_filenames.append(csv_filename)
                     if 0 <= page_num < len(pdf_text):  # Check if page number is valid
                         # Get the result corresponding to the page_num
                         result = next((r for r in pdf_text if r["page_number"] == page_num), None)
                         
                         if result is not None:  # Check if the result was found
-                            table_df = extract_table_with_openai(result)  # Pass the whole result dictionary
-                            if table_df is not None:
-                                extracted_csv_data.append(table_df)
-                            else:
-                                text = pdf_text[page_num]['text']  # Access text from pdf_text
-                                with open(csv_filename, 'w', encoding='utf-8') as f:  # Open file in write mode
-                                    f.write(text)  # Directly write the text to the CSV file
-                                extracted_csv_data.append(text) # Append the text to extracted_csv_data as well
-                                st.success(f"CSV File '{csv_filename}' has been extracted (from text).")
+                            # print("RESULT: ",result['text'])
+                            # table_df = extract_table_with_openai(result['text']) 
+
+                            extract_table_with_openai(result)
+                            # print('TABLE: ',table_df)
+                             # Pass the whole result dictionary
+                            # st.write(table_df)
+                            # if table_df is not None:
+                            #     extracted_csv_data.append(table_df)
+                            # else:
+                            #     text = pdf_text[page_num]['text']  # Access text from pdf_text
+                            #     with open(csv_filename, 'w', encoding='utf-8') as f:  # Open file in write mode
+                            #         f.write(text)  # Directly write the text to the CSV file
+                            #     extracted_csv_data.append(text) # Append the text to extracted_csv_data as well
+                                # if csv_filename:
+                                #     
+                                #     st.success(f"CSV File '{csv_filename}' has been extracted (from text).")
+
+                                #     # After successful extraction, set the flag to show the download button
+                                #     st.session_state['show_download_button'] = True
+                                #     st.session_state['csv_filenames'] = csv_filename
                     else:
                         st.warning(f"Invalid page number: {page_num + 1}")
                         continue
-                
+                if len(csv_filenames)>0:
+                    st.success(f"CSV File '{csv_filename}' has been extracted (from text).")
+                    # After successful extraction, set the flag to show the download button
+                    st.session_state['show_download_button'] = True
+                    st.session_state['csv_filenames'] = csv_filenames
                 if len(extracted_csv_data) > 0:
                     # Check if all elements in extracted_csv_data are strings
                     if all(isinstance(item, str) for item in extracted_csv_data):
@@ -483,11 +468,47 @@ with st.form('extractionForm'):
                         # Otherwise, concatenate the DataFrames
                         final_df = pd.concat(extracted_csv_data, ignore_index=True)
                     
-                    csv_filename = "extracted.csv"
+                    csv_filename = f"page_{page_num + 1}.csv"
                     final_df.to_csv(csv_filename, index=False)
                     st.success(f"CSV File '{csv_filename}' has been extracted.")
                 else:
                     st.info("No tables found in selected pages.")  # Updated message
 
             except Exception as e:  # Catch more general exceptions
+                st.write('it passed here')
                 st.error(f"Error extracting CSV: {e}")
+
+if st.session_state.get("show_download_button",False):
+    number_of_pages = st.session_state["csv_filenames"]
+    for x in number_of_pages:
+        the_filename = x
+        with open(x,"rb") as file:
+            st.download_button(
+                label=x,
+                data=file,
+                file_name = x,
+                mime="text/csv"
+            )
+
+
+# Clear Everything Form
+with st.form('clearForm'):
+    if st.form_submit_button("CLEAR EVERYTHING"):
+        # Clear relevant session state variables
+        st.session_state.selected_results = []
+        st.session_state.selected_csv_data = []
+        st.session_state['pdf_text'] = None
+        st.session_state['show_download_buttons'] = []
+        st.session_state['extracted_csvs'] = {}
+
+        # Clear output directory
+        for filename in os.listdir(OUTPUT_DIR):
+            file_path = os.path.join(OUTPUT_DIR, filename)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+            except Exception as e:
+                st.error(f"Error clearing output directory: {e}")
+        st.success("Everything cleared successfully!")
+        # Rerun the app to refresh the UI (optional, but recommended for clarity)
+        st.experimental_rerun()
