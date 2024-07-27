@@ -415,16 +415,16 @@ with st.form('searchForm'):
                         with st.container():
                             print('nothing again')
                             # st.write(f"Page {result['page_number'] + 1}:")
-                            col1,col2 = st.columns([2,8])
+                            # col1,col2 = st.columns([2,8])
 
-                            with col1:
-                                # st.write(f"Page {result['page_number'] + 1}") 
-                                print('try nothing')
+                            # with col1:
+                            #     # st.write(f"Page {result['page_number'] + 1}") 
+                            #     print('try nothing')
                                 
-                            # Image and text in the second column
-                            with col2:
-                                image = Image.open(os.path.join(BASE_DIR, result['thumbnail_path']))
-                                st.image(image, caption=f"Page {result['page_number']+ 1} Thumbnail", use_column_width=True)
+                            # # Image and text in the second column
+                            # with col2:
+                            image = Image.open(os.path.join(BASE_DIR, result['thumbnail_path']))
+                            st.image(image, caption=f"Page {result['page_number']+ 1} Thumbnail", use_column_width=True)
                       
                     
             except Exception as e:
