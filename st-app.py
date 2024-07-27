@@ -430,7 +430,7 @@ with st.form('searchForm'):
             st.warning("Please upload at least one PDF file.")
         else:
             try:
-                pdf_text = search_pdfs(pdf_files, search_words, excel_file)
+                pdf_text = search_pdfs(pdf_files, search_words)
                 st.session_state['pdf_text'] = pdf_text
 
                 if pdf_text:
