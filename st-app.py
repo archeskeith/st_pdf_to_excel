@@ -26,7 +26,11 @@ import subprocess
 import csv
 import ocrmypdf
 from pdfminer.layout import LTChar
-from pdf2image import convert_from_path
+from pdf2image.exceptions import (
+    PDFInfoNotInstalledError,
+    PDFPageCountError,
+    PDFSyntaxError
+)
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -194,7 +198,20 @@ def extract_text_from_page(page_num, pdf_path):
 
     # Create thumbnail using pdf2image
     
-    images = convert_from_path(pdf_path, first_page=page_num+1, last_page=page_num+1, poppler_path="/home/linuxbrew/.linuxbrew/bin")  # Set the Poppler path from the output
+    try:
+        images = convert_from_path(pdf_path, first_page=page_num+1, last_page=page_num+1)
+    except PDFPageCountError as e:
+        st.error(f"Error getting page count for PDF: {e}")
+        return None
+    except PDFSyntaxError as e:
+        st.error(f"Error parsing PDF: {e}")
+        return None
+    except PDFInfoNotInstalledError as e:
+        st.error("pdfinfo is not installed. Please install it using 'brew install poppler' or equivalent.")
+        return None
+    except Exception as e:  # Catch any other unexpected exceptions
+        st.error(f"Unexpected error converting PDF to images: {e}")
+        return None
     
     thumbnail_path = os.path.join(THUMBNAILS_DIR, f'page_{page_num + 1}_thumbnail.png')
     images[0].save(thumbnail_path, "PNG")
