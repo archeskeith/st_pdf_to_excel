@@ -7,8 +7,8 @@ from PIL import Image
 # from fitz import *
 import pdfplumber
 # from fitz_fix.fitz import * 
-# from pypdf import PdfMerger
-from PyPDF2 import PdfMerger
+from pypdf import PdfWriter
+# from PyPDF2 import PdfMerger
 from concurrent.futures import ThreadPoolExecutor
 import os
 import pandas as pd
@@ -259,41 +259,10 @@ def extract_table_with_openai(result, model="gpt-4o-mini"):
 
 
 
-def search_pdfs(pdf_files, search_words, excel_file=None):
-    output_dir = os.path.join(BASE_DIR, "output")
+# def search_pdfs(pdf_files, search_words, excel_file=None):
+#     output_dir = os.path.join(BASE_DIR, "output")
 
-    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False, dir=BASE_DIR) as temp_pdf:
-        if len(pdf_files) > 1:
-            merger = PdfMerger()
-            for pdf in pdf_files:
-                merger.append(pdf)
-            merger.write(temp_pdf)
-        else:
-            temp_pdf.write(pdf_files[0].read())
-        temp_pdf_path = temp_pdf.name
-
-    with pdfplumber.open(temp_pdf_path) as pdf:
-        results = []
-        search_words_list = search_words.lower().split()
-
-        for page_num in range(len(pdf.pages)):
-            result = extract_text_from_page(page_num, temp_pdf_path)  
-            result_text = result['text'].lower()
-            if not search_words_list or any(word in result_text for word in search_words_list):
-                results.append(result)
-
-    results.sort(key=lambda x: x['page_number'] + 1)
-
-    # Remove the temporary PDF files
-    os.remove(temp_pdf_path)
-
-    return results  
-# def search_pdfs(pdf_files,search_words,excel_file=None):
-#     output_dir = os.path.join(BASE_DIR,"output")
-#     global_excel_file = os.path.join(output_dir, "new_version.xlsx")
-    
-#     # merge PDFs (if multiple files has been uploaded)
-#     with tempfile.NamedTemporaryFile(suffix='.pdf',delete=False,dir=BASE_DIR) as temp_pdf:
+#     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False, dir=BASE_DIR) as temp_pdf:
 #         if len(pdf_files) > 1:
 #             merger = PdfMerger()
 #             for pdf in pdf_files:
@@ -301,31 +270,66 @@ def search_pdfs(pdf_files, search_words, excel_file=None):
 #             merger.write(temp_pdf)
 #         else:
 #             temp_pdf.write(pdf_files[0].read())
-        
 #         temp_pdf_path = temp_pdf.name
-    
-#     # open merged pdf or single pdf
-#     doc = fitz.open(temp_pdf_path)
 
-#     # search logic using ThreadPoolExecutor (parallelism)
-#     results = []
-#     search_words_list = search_words.lower().split()
+#     with pdfplumber.open(temp_pdf_path) as pdf:
+#         results = []
+#         search_words_list = search_words.lower().split()
 
-#     with ThreadPoolExecutor() as executor:
-#         futures = [executor.submit(extract_text_from_page,page.number - 1, temp_pdf_path) for page in doc.pages()]
-        
-#         for future in as_completed(futures):
-#             result = future.result()
+#         for page_num in range(len(pdf.pages)):
+#             result = extract_text_from_page(page_num, temp_pdf_path)  
 #             result_text = result['text'].lower()
 #             if not search_words_list or any(word in result_text for word in search_words_list):
-#                 result['thumbnail_path'] = os.path.join("thumbnails", os.path.basename(result['thumbnail_path']))
 #                 results.append(result)
-    
-#     results.sort(key=lambda x: x['page_number'])
-#     doc.close()
+
+#     results.sort(key=lambda x: x['page_number'] + 1)
+
+#     # Remove the temporary PDF files
 #     os.remove(temp_pdf_path)
-#     # st.write(results)
-#     return results
+
+#     return results  
+
+def merge_pdfs(pdf_files, output_path):
+    """Merges multiple PDF files into a single PDF."""
+    merger = PdfWriter()
+
+    for pdf_file in pdf_files:
+        reader = PdfReader(pdf_file)  
+        for page in reader.pages:
+            merger.add_page(page)
+
+    # Write the merged PDF to the output path
+    with open(output_path, "wb") as output_pdf:
+        merger.write(output_pdf)
+
+def search_pdfs(pdf_files, search_words, excel_file=None):
+    """Searches for keywords in uploaded PDF files and returns results."""
+
+    # Merge PDFs if necessary
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False, dir=BASE_DIR) as temp_pdf:
+        if len(pdf_files) > 1:
+            merge_pdfs(pdf_files, temp_pdf.name)  # Merge using PdfWriter
+        else:
+            temp_pdf.write(pdf_files[0].read())
+        temp_pdf_path = temp_pdf.name
+
+    # Extract text and thumbnails from pages
+    with pdfplumber.open(temp_pdf_path) as pdf:
+        results = []
+        search_words_list = search_words.lower().split()
+
+        for page_num in range(len(pdf.pages)):
+            result = extract_text_from_page(page_num, temp_pdf_path)
+            result_text = result['text'].lower()
+            if not search_words_list or any(word in result_text for word in search_words_list):
+                results.append(result)
+
+    results.sort(key=lambda x: x['page_number'] + 1)
+
+    # Remove the temporary PDF file
+    os.remove(temp_pdf_path)
+
+    return results
 
 
 
