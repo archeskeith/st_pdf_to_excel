@@ -2,5 +2,4 @@ swig
 python3-dev
 libtesseract-dev
 libleptonica-dev
-poppler
 poppler-utils
