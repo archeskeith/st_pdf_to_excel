@@ -8,6 +8,7 @@ from PIL import Image
 import pdfplumber
 # from fitz_fix.fitz import * 
 from pypdf import PdfWriter
+from pdf2image import convert_from_path  
 # from PyPDF2 import PdfMerger
 from concurrent.futures import ThreadPoolExecutor
 import os
