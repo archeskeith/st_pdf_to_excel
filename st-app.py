@@ -23,6 +23,8 @@ import base64
 from io import StringIO
 import csv
 import ocrmypdf
+from pdfminer.layout import LTChar
+from pdf2image import convert_from_path
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -163,8 +165,7 @@ def final_string_to_csv(input_string):
 
 def extract_text_from_page(page_num, pdf_path):
     """Extracts text and thumbnail from a PDF page using pdfminer.six and pdf2image."""
-    from pdfminer.layout import LTChar
-    from pdf2image import convert_from_path
+    
 
     with open(pdf_path, 'rb') as file:
         for page_layout in extract_pages(file, page_numbers=[page_num]):
