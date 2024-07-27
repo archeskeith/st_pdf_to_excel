@@ -413,7 +413,7 @@ with st.form('searchForm'):
                     # Loop through the results
                     for i, result in enumerate(pdf_text):
                         with st.container():
-                            # st.write(f"Page {result['page_number'] + 1}:")
+                            st.write(f"Page {result['page_number'] + 1}:")
                             col1,col2 = st.columns([2,8])
 
                             with col1:
@@ -514,7 +514,8 @@ with st.form('extractionForm'):
                     final_df.to_csv(csv_filename, index=False)
                     st.success(f"CSV File '{csv_filename}' has been extracted.")
                 else:
-                    st.info("No tables found in selected pages.")  # Updated message
+                    None
+                    # st.info("No tables found in selected pages.")  # Updated message
 
             except Exception as e:  # Catch more general exceptions
                 # st.write('it passed here')
