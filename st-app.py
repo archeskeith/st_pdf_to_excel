@@ -45,7 +45,7 @@ os.makedirs(os.path.join(BASE_DIR, "output"), exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR,"static"),exist_ok=True)
 os.makedirs(os.path.join(STATIC_DIR, "thumbnails"), exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR, "uploads"), exist_ok=True)
-os.environ["POPPLER_PATH"] = "/home/linuxbrew/.linuxbrew/bin/pdfinfo"
+os.environ["POPPLER_PATH"] = "/home/linuxbrew/.linuxbrew/bin"
 
 GLOBAL_EXCEL_FILE_URL = None
 # current_dir = os.getcwd()
@@ -179,7 +179,7 @@ def extract_text_from_page(page_num, pdf_path):
 
     # Create thumbnail using pdf2image
     
-    images = convert_from_path(pdf_path, first_page=page_num+1, last_page=page_num+1,poppler_path="/home/linuxbrew/.linuxbrew/bin/pdfinfo")
+    images = convert_from_path(pdf_path, first_page=page_num+1, last_page=page_num+1,poppler_path="/home/linuxbrew/.linuxbrew/bin")
     
     thumbnail_path = os.path.join(THUMBNAILS_DIR, f'page_{page_num + 1}_thumbnail.png')
     images[0].save(thumbnail_path, "PNG")
