@@ -529,7 +529,7 @@ with st.form('extractionForm'):
                         st.warning(f"Invalid page number: {page_num + 1}")
                         continue
                 if len(csv_filenames)>0:
-                    st.success(f"CSV File '{csv_filename}' has been extracted (from text).")
+                    # st.success(f"CSV File '{csv_filename}' has been extracted (from text).")
                     # After successful extraction, set the flag to show the download button
                     st.session_state['show_download_button'] = True
                     st.session_state['csv_filenames'] = csv_filenames
@@ -545,8 +545,8 @@ with st.form('extractionForm'):
                     csv_filename = f"page_{page_num + 1}.csv"
                     final_df.to_csv(csv_filename, index=False)
                     st.success(f"CSV File '{csv_filename}' has been extracted.")
-                else:
-                    None
+                # else:
+                    # None
                     # st.info("No tables found in selected pages.")  # Updated message
 
             except Exception as e:  # Catch more general exceptions
