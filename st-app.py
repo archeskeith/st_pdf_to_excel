@@ -586,4 +586,4 @@ with st.form('clearForm'):
                 st.error(f"Error clearing output directory: {e}")
         st.success("Everything cleared successfully!")
         # Rerun the app to refresh the UI (optional, but recommended for clarity)
-        st.experimental_rerun()
+        st.rerun()
