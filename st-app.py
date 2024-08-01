@@ -2,6 +2,7 @@ import streamlit as st
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer,LTFigure
 import pytesseract
+import re
 from PIL import Image
 # import fitz
 # from fitz import *
