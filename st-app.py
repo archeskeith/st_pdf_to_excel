@@ -170,6 +170,7 @@ def final_string_to_csv(input_string):
             # Remove newlines and forward slashes from strings
             if isinstance(col, str):
                 col = col.replace("\n", "").replace("/", "")
+                col = re.sub(r"\\n|\/n", "", col)
             try:
                 # Remove commas and convert to integer if possible
                 processed_columns.append(int(col.replace(",", "")))
