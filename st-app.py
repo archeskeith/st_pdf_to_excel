@@ -7,7 +7,6 @@ from PIL import Image
 # import fitz
 # from fitz import *
 import pdfplumber
-import PdfReader
 # from fitz_fix.fitz import * 
 from pypdf import PdfWriter
 from pdf2image import convert_from_path  
