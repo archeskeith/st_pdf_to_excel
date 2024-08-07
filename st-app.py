@@ -20,7 +20,7 @@ import time
 from concurrent.futures import as_completed
 from PIL import Image
 import openai
-from openai import OpenAI # Add this line of code
+from openai import OpenAI 
 import base64
 from io import StringIO
 import subprocess
@@ -52,23 +52,6 @@ os.makedirs(os.path.join(BASE_DIR,"static"),exist_ok=True)
 os.makedirs(os.path.join(STATIC_DIR, "thumbnails"), exist_ok=True)
 os.makedirs(os.path.join(BASE_DIR, "uploads"), exist_ok=True)
 
-# GLOBAL_EXCEL_FILE_URL = None
-# current_dir = os.getcwd()
-
-# # Function to get Poppler version
-# def get_poppler_version():
-#     try:
-#         result = subprocess.run(["pdfinfo", "-v"], capture_output=True, text=True)
-#         if result.returncode == 0:
-#             return result.stdout.split('\n')[0]  # Extract first line (version)
-#         else:
-#             return "Poppler not found or not in PATH"
-#     except FileNotFoundError:
-#         return "pdfinfo command not found"
-
-# # Display Poppler version in Streamlit app
-# poppler_version = get_poppler_version()
-# st.write(f"Poppler version: {poppler_version}")
 
 def update_selected_pages(page_num):
     if page_num in st.session_state.selected_results:
@@ -84,42 +67,40 @@ def update_selected_pages(page_num):
 def string_to_csv(input_string):
     """Converts a string with '|' and '\n' delimiters into CSV format."""
 
-    # Initialize empty lists for rows and headers
+    # initializing empty lists for rows and headers
     csv_rows = []
     headers = []
 
-    # Create a file-like object from the string for csv.reader
+    # creating a file-like object from the string for csv.reader
     csv_stringio = StringIO(input_string)
     csv_reader = csv.reader(csv_stringio, delimiter='|')
 
-    # Iterate through the rows in the string
+    # iterating through the rows in the string
     for i, row in enumerate(csv_reader):
-        # Remove extra spaces, remove commas, and convert to int for numeric values
         # cleaned_row = [entry.strip().replace(',', '') for entry in row]
         cleaned_row = [entry.strip().replace(",",'') if isinstance(entry,str) else entry for entry in row] 
         cleaned_row = [entry.strip().replace(",","") if isinstance(entry,str) else entry for entry in row] 
 
         if i == 0:
-            # The first row is considered the header
+            #header will be considered as the first row
             headers = cleaned_row
         else:
-            # For subsequent rows, try to convert numeric values to integers
             try:
                 cleaned_row = [int(x) if x.isdigit() else x for x in cleaned_row]
             except ValueError:
-                pass  # If not numeric, keep it as a string
+                pass 
 
-            # Append the cleaned row to the list of rows
+            # append the cleaned row to the list of rows
             csv_rows.append(cleaned_row)
 
     # for x in headers:
     #     # print(x)
     #     # print(type(x))
-    # Remove the newline in headers and rows
+    # remove the newline in headers and rows
     # headers = [header.replace('\n', '') for header in headers]
     # csv_rows = [[cell.replace('\n', '') for cell in row] for row in csv_rows]
     
-    # Remove '\n' from headers and rows before returning (only for string values)
+    # remove '\n' from headers and rows before returning (only for string values)
     headers = [header.replace('/n', '') if isinstance(header, str) else header for header in headers]
     csv_rows = [[cell.replace('/n', '') if isinstance(cell, str) else cell for cell in row] for row in csv_rows]
     print(headers)
@@ -127,17 +108,14 @@ def string_to_csv(input_string):
     return headers, csv_rows
 
 def remove_newlines(headers, rows):
-    """Removes newline characters (\n or /n) from headers and rows in a CSV structure, even if within numbers."""
     def clean_cell(cell):
-        """Helper function to clean a single cell."""
         if isinstance(cell, str):
             return cell.replace("\n", "").replace("/", "")
         return cell
 
-    # Clean headers
     clean_headers = [clean_cell(header) for header in headers]
 
-    # Clean rows (and try converting to numbers after cleaning)
+    # cleaning rows (and try converting to numbers after cleaning)
     clean_rows = []
     for row in rows:
         processed_row = [clean_cell(cell) for cell in row]
@@ -148,88 +126,42 @@ def remove_newlines(headers, rows):
                 for cell in processed_row
             ]
         except ValueError:
-            pass  # Keep the cell as a string if conversion fails
+            pass  # keeping the cell as a string if conversion fails
         clean_rows.append(processed_row)
 
     return clean_headers, clean_rows
 
 def final_string_to_csv(input_string):
-    """Converts a string with '|' and '\n' delimiters into CSV format.
-
-    This function removes commas from numeric values, handles newlines, and
-    removes newline characters from string values, including those
-    within numbers.
-    """
     rows = input_string.splitlines()
-
-    # Preprocess rows to remove commas from numeric values and '\n' from strings
+    
     processed_rows = []
     for row in rows:
         columns = row.split("|")
         processed_columns = []
         for col in columns:
-            # Remove newlines and forward slashes from strings
             if isinstance(col, str):
                 col = col.replace("\n", "").replace("/", "")
                 col = re.sub(r"\\n|\/n", "", col)
             try:
-                # Remove commas and convert to integer if possible
                 processed_columns.append(int(col.replace(",", "")))
             except ValueError:
-                # Keep the cell as a string if conversion fails
                 processed_columns.append(col)
 
         processed_rows.append(processed_columns)
 
-    headers = processed_rows[0]  # Extract headers
-    rows = processed_rows[1:]  # Extract data rows
+    headers = processed_rows[0]  #headers
+    rows = processed_rows[1:]  # rows
 
     return headers, rows
 
-# def final_string_to_csv(input_string):
-#     """Converts a string with '|' and '\n' delimiters into CSV format.
-
-#     This function removes commas from numeric values, handles newlines, and
-#     removes newline characters from string values.
-#     """
-#     rows = input_string.splitlines()
-
-#     # Preprocess rows to remove commas from numeric values and '\n' from strings
-#     processed_rows = []
-#     for row in rows:
-#         columns = row.split("|")
-#         processed_columns = []
-#         for col in columns:
-#             if isinstance(col, str):
-#                 col = col.replace('\n', '')  # Remove newlines from strings
-#                 try:
-#                     processed_columns.append(int(col.replace(",", "")))  # Remove commas and convert to integer
-#                 except ValueError:
-#                     processed_columns.append(col)  # Not an integer, keep as string
-#             else:
-#                 processed_columns.append(col)  # If not a string, keep the original value
-
-#         processed_rows.append(processed_columns)
-
-#     headers = processed_rows[0]  # Extract headers
-#     rows = processed_rows[1:]  # Extract data rows
-
-#     return headers, rows
-
 def extract_text_from_page(page_num, pdf_path):
-    """Extracts text and thumbnail from a PDF page using pdfminer.six and pdf2image."""
-    
-
     with open(pdf_path, 'rb') as file:
         for page_layout in extract_pages(file, page_numbers=[page_num]):
             text = ""
             for element in page_layout:
                 if isinstance(element, LTTextContainer):
                     text += element.get_text()
-            break  # Exit the loop after processing the desired page
-
-    # Create thumbnail using pdf2image
-    
+            break
     try:
         images = convert_from_path(pdf_path, first_page=page_num+1, last_page=page_num+1)
     except PDFPageCountError as e:
@@ -241,14 +173,14 @@ def extract_text_from_page(page_num, pdf_path):
     except PDFInfoNotInstalledError as e:
         st.error("pdfinfo is not installed. Please install it using 'brew install poppler' or equivalent.")
         return None
-    except Exception as e:  # Catch any other unexpected exceptions
+    except Exception as e:
         st.error(f"Unexpected error converting PDF to images: {e}")
         return None
     
     thumbnail_path = os.path.join(THUMBNAILS_DIR, f'page_{page_num + 1}_thumbnail.png')
     images[0].save(thumbnail_path, "PNG")
 
-    # If no text, try OCR
+    # if there's no text, then will use OCR
     if not text.strip():
         text = pytesseract.image_to_string(images[0])
 
@@ -264,14 +196,12 @@ def extract_table_with_openai(result, model="gpt-4o-mini"):
     # st.write("RESULT: ",result)
     # print('try')
     page_num = int(result["page_number"])
-    # print('obanai')
 
     thumbnail_path = result["thumbnail_path"]
     image_path = os.path.join(BASE_DIR, thumbnail_path)
 
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-    # Prepare the image data as base64 string
     with open(image_path, "rb") as image_file:
         base64_image = base64.b64encode(image_file.read()).decode('utf-8')
 
@@ -288,7 +218,7 @@ def extract_table_with_openai(result, model="gpt-4o-mini"):
                         "Make sure years are directly aligned with the columns they are placed at (IMPORTANT)."
                         "Do it directly, no need to respond, just do the table."
                         "Make sure the output really looks like the table shown in the text.\n\n" 
-                        + str(result['text']) # Convert the result to string 
+                        + str(result['text']) # convert the result to string 
                     )
                 },
                 {"role": "user", "content": [
@@ -304,7 +234,7 @@ def extract_table_with_openai(result, model="gpt-4o-mini"):
         # st.write(string_to_csv(message_content))
         headers, rows = final_string_to_csv(message_content)
         headers, rows = remove_newlines(headers, rows) 
-        # Write the CSV file (add header first, then rows)
+        # writing the CSV file (add header first, then rows)
         filename = f"page_{page_num + 1}.csv"
         with open(filename, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile)
@@ -315,7 +245,7 @@ def extract_table_with_openai(result, model="gpt-4o-mini"):
         # print(response.choices[0])
         return None
         # return(response.choices[0].messsage.content)
-    # Error handling
+    #Error handling (debugging)
     except openai.OpenAIError as e:
         st.error(f"OpenAI API Error on page {page_num + 1}: {e}")
         return None
@@ -327,37 +257,6 @@ def extract_table_with_openai(result, model="gpt-4o-mini"):
         return None
 
 
-
-# def search_pdfs(pdf_files, search_words, excel_file=None):
-#     output_dir = os.path.join(BASE_DIR, "output")
-
-#     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False, dir=BASE_DIR) as temp_pdf:
-#         if len(pdf_files) > 1:
-#             merger = PdfMerger()
-#             for pdf in pdf_files:
-#                 merger.append(pdf)
-#             merger.write(temp_pdf)
-#         else:
-#             temp_pdf.write(pdf_files[0].read())
-#         temp_pdf_path = temp_pdf.name
-
-#     with pdfplumber.open(temp_pdf_path) as pdf:
-#         results = []
-#         search_words_list = search_words.lower().split()
-
-#         for page_num in range(len(pdf.pages)):
-#             result = extract_text_from_page(page_num, temp_pdf_path)  
-#             result_text = result['text'].lower()
-#             if not search_words_list or any(word in result_text for word in search_words_list):
-#                 results.append(result)
-
-#     results.sort(key=lambda x: x['page_number'] + 1)
-
-#     # Remove the temporary PDF files
-#     os.remove(temp_pdf_path)
-
-#     return results  
-
 def merge_pdfs(pdf_files, output_path):
     """Merges multiple PDF files into a single PDF."""
     merger = PdfWriter()
@@ -367,14 +266,14 @@ def merge_pdfs(pdf_files, output_path):
         for page in reader.pages:
             merger.add_page(page)
 
-    # Write the merged PDF to the output path
+    # writing the merged PDF to the output path
     with open(output_path, "wb") as output_pdf:
         merger.write(output_pdf)
 # excel_file=None
 def search_pdfs(pdf_files, search_words):
     """Searches for keywords in uploaded PDF files and returns results."""
 
-    # Merge PDFs if necessary
+    # merge PDFs if necessary/needed
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False, dir=BASE_DIR) as temp_pdf:
         if len(pdf_files) > 1:
             merge_pdfs(pdf_files, temp_pdf.name)  # Merge using PdfWriter
@@ -382,7 +281,7 @@ def search_pdfs(pdf_files, search_words):
             temp_pdf.write(pdf_files[0].read())
         temp_pdf_path = temp_pdf.name
 
-    # Extract text and thumbnails from pages
+    # extracting text and thumbnails from pages
     with pdfplumber.open(temp_pdf_path) as pdf:
         results = []
         search_words_list = search_words.lower().split()
@@ -394,8 +293,6 @@ def search_pdfs(pdf_files, search_words):
                 results.append(result)
 
     results.sort(key=lambda x: x['page_number'] + 1)
-
-    # Remove the temporary PDF file
     os.remove(temp_pdf_path)
 
     return results
@@ -438,23 +335,14 @@ with st.form('searchForm'):
                 if pdf_text:
                     st.subheader(f"Search Results for '{search_words}:")
 
-                    # Initialize variables to store selected page number
+                    # initializing variables to store selected page number
                     # selected_results = st.session_state["selected_results"] # Access from session state
                     # selected_csv_data = st.session_state["selected_csv_data"]
 
-                    # Loop through the results
+                    #looping through the results
                     for i, result in enumerate(pdf_text):
                         with st.container():
                             print('nothing again')
-                            # st.write(f"Page {result['page_number'] + 1}:")
-                            # col1,col2 = st.columns([2,8])
-
-                            # with col1:
-                            #     # st.write(f"Page {result['page_number'] + 1}") 
-                            #     print('try nothing')
-                                
-                            # # Image and text in the second column
-                            # with col2:
                             image = Image.open(os.path.join(BASE_DIR, result['thumbnail_path']))
                             st.image(image, caption=f"Page {result['page_number']+ 1} Thumbnail", use_column_width=True)
                       
@@ -471,87 +359,64 @@ with st.form('searchForm'):
         #         st.error(f"Error uploading Excel file: {e}")
 
 
-# Add a new form for page selection
+#adding a new form for page selection
 with st.form('extractionForm'):
     st.write("Enter Page Numbers (comma-separated), e.g. '1,2,3':")
     selected_pages_input = st.text_input("Pages", "")
     
-    # Submit button for CSV extraction
+    
     if st.form_submit_button("Extract Selected to CSV"):
-        if not st.session_state.get("pdf_text"):  # Make sure pdf_text is available
+        if not st.session_state.get("pdf_text"):  # foolproof
             st.warning("Please search for PDFs first.")
         else:
             pdf_text = st.session_state['pdf_text']
+            # try for debugging
             try:
-            # Split and clean the input, allowing for spaces and empty entries
                 selected_pages = []
                 for x in selected_pages_input.split(","):
                     stripped_x = x.strip()
-                    if stripped_x:  # Check if it's not empty after stripping
+                    if stripped_x:  # checking if it's not empty after stripping
                         try:
                             selected_pages.append(int(stripped_x) - 1)
                         except ValueError:
                             st.warning(f"Ignoring invalid page input: {x}")
-
-                # Use set to remove duplicates and convert back to list
+                            
                 selected_pages = list(set(selected_pages))
                 
                 extracted_csv_data = []
                 csv_filenames = []
                 for page_num in selected_pages:
-                    csv_filename = f"page_{page_num + 1}.csv"  # Create filename based on page number
+                    csv_filename = f"page_{page_num + 1}.csv"  # creating filename based on page number
                     csv_filenames.append(csv_filename)
-                    if 0 <= page_num < len(pdf_text):  # Check if page number is valid
-                        # Get the result corresponding to the page_num
+                    if 0 <= page_num < len(pdf_text):  # checking if page number is valid (will only add those pages filtered from search words)
                         result = next((r for r in pdf_text if r["page_number"] == page_num), None)
                         
-                        if result is not None:  # Check if the result was found
+                        if result is not None: 
                             # print("RESULT: ",result['text'])
                             # table_df = extract_table_with_openai(result['text']) 
 
                             extract_table_with_openai(result)
-                            # print('TABLE: ',table_df)
-                             # Pass the whole result dictionary
-                            # st.write(table_df)
-                            # if table_df is not None:
-                            #     extracted_csv_data.append(table_df)
-                            # else:
-                            #     text = pdf_text[page_num]['text']  # Access text from pdf_text
-                            #     with open(csv_filename, 'w', encoding='utf-8') as f:  # Open file in write mode
-                            #         f.write(text)  # Directly write the text to the CSV file
-                            #     extracted_csv_data.append(text) # Append the text to extracted_csv_data as well
-                                # if csv_filename:
-                                #     
-                                #     st.success(f"CSV File '{csv_filename}' has been extracted (from text).")
-
-                                #     # After successful extraction, set the flag to show the download button
-                                #     st.session_state['show_download_button'] = True
-                                #     st.session_state['csv_filenames'] = csv_filename
+                            
                     else:
                         st.warning(f"Invalid page number: {page_num + 1}")
                         continue
                 if len(csv_filenames)>0:
-                    # st.success(f"CSV File '{csv_filename}' has been extracted (from text).")
-                    # After successful extraction, set the flag to show the download button
                     st.session_state['show_download_button'] = True
                     st.session_state['csv_filenames'] = csv_filenames
                 if len(extracted_csv_data) > 0:
-                    # Check if all elements in extracted_csv_data are strings
+                    # checking if all elements are strings
                     if all(isinstance(item, str) for item in extracted_csv_data):
-                        # If they are, create a DataFrame with a single column named "Text"
                         final_df = pd.DataFrame({"Text": extracted_csv_data})
                     else:
-                        # Otherwise, concatenate the DataFrames
+                        # concatenate the DataFrames instead
                         final_df = pd.concat(extracted_csv_data, ignore_index=True)
                     
                     csv_filename = f"page_{page_num + 1}.csv"
                     final_df.to_csv(csv_filename, index=False)
                     st.success(f"CSV File '{csv_filename}' has been extracted.")
-                # else:
-                    # None
-                    # st.info("No tables found in selected pages.")  # Updated message
+                
 
-            except Exception as e:  # Catch more general exceptions
+            except Exception as e:
                 # st.write('it passed here')
                 st.error(f"Error extracting CSV: {e}")
 
@@ -568,17 +433,16 @@ if st.session_state.get("show_download_button",False):
             )
 
 
-# Clear Everything Form
+# clear everything (in progress)
 with st.form('clearForm'):
     if st.form_submit_button("CLEAR EVERYTHING"):
-        # Clear relevant session state variables
         st.session_state.selected_results = []
         st.session_state.selected_csv_data = []
         st.session_state['pdf_text'] = None
         st.session_state['show_download_buttons'] = []
         st.session_state['extracted_csvs'] = {}
 
-        # Clear output directory
+        # clearing output directory
         for filename in os.listdir(OUTPUT_DIR):
             file_path = os.path.join(OUTPUT_DIR, filename)
             try:
@@ -587,5 +451,4 @@ with st.form('clearForm'):
             except Exception as e:
                 st.error(f"Error clearing output directory: {e}")
         st.success("Everything cleared successfully!")
-        # Rerun the app to refresh the UI (optional, but recommended for clarity)
         st.rerun()
