@@ -272,55 +272,32 @@ def merge_pdfs(pdf_files, output_path):
 excel_file=None
 
 
-# def search_pdfs(pdf_files, search_words):
-#     # merge PDFs if necessary/needed
-#     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False, dir=BASE_DIR) as temp_pdf:
-#         if len(pdf_files) > 1:
-#             merge_pdfs(pdf_files, temp_pdf.name)  # Merge using PdfWriter
-#         else:
-#             temp_pdf.write(pdf_files[0].read())
-#         temp_pdf_path = temp_pdf.name
-
-#     # extracting text and thumbnails from pages
-#     with pdfplumber.open(temp_pdf_path) as pdf:
-#         results = []
-#         search_words_list = search_words.lower().split()
-
-#         for page_num in range(len(pdf.pages)):
-#             result = extract_text_from_page(page_num, temp_pdf_path)
-#             result_text = result['text'].lower()
-#             if not search_words_list or any(word in result_text for word in search_words_list):
-#                 results.append(result)
-
-#     results.sort(key=lambda x: x['page_number'] + 1)
-#     os.remove(temp_pdf_path)
-
-#     return results
-
 def search_pdfs(pdf_files, search_words):
-    results = []
-    search_words_list = search_words.lower().split()
-    for pdf_file in pdf_files:
-        try:
-            with pdfplumber.open(pdf_file) as pdf:
-                # Check first page for potential matches
-                first_page_text = pdf.pages[0].extract_text().lower()
-                if not any(word in first_page_text for word in search_words_list):
-                    continue
+    # merge PDFs if necessary/needed
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False, dir=BASE_DIR) as temp_pdf:
+        if len(pdf_files) > 1:
+            merge_pdfs(pdf_files, temp_pdf.name)  # Merge using PdfWriter
+        else:
+            temp_pdf.write(pdf_files[0].read())
+        temp_pdf_path = temp_pdf.name
 
-                # Iterate through relevant pages
-                for page_num, page in enumerate(pdf.pages):
-                    result_text = page.extract_text().lower()
-                    if any(word in result_text for word in search_words_list):
-                        result = extract_text_from_page(page_num, pdf_file)
-                        results.append(result)
+    # extracting text and thumbnails from pages
+    with pdfplumber.open(temp_pdf_path) as pdf:
+        results = []
+        search_words_list = search_words.lower().split()
 
-        except Exception as e:
-            print(f"Error processing {pdf_file}: {e}")
+        for page_num in range(len(pdf.pages)):
+            result = extract_text_from_page(page_num, temp_pdf_path)
+            result_text = result['text'].lower()
+            if not search_words_list or any(word in result_text for word in search_words_list):
+                results.append(result)
 
     results.sort(key=lambda x: x['page_number'] + 1)
+    os.remove(temp_pdf_path)
 
     return results
+
+
 
 
 # streamlit app
