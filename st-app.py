@@ -32,6 +32,7 @@ from pdf2image.exceptions import (
     PDFPageCountError,
     PDFSyntaxError
 )
+from PyPDF2 import PdfReader, PdfWriter
 from dotenv import load_dotenv
 load_dotenv()
 client = openai.OpenAI()
@@ -258,18 +259,47 @@ def extract_table_with_openai(result, model="gpt-4o-mini"):
 
 
 def merge_pdfs(pdf_files, output_path):
-    """Merges multiple PDF files into a single PDF."""
+    """
+    Merges multiple PDF files into a single PDF.
+
+    Args:
+        pdf_files (list): A list of paths to the PDF files to be merged.
+        output_path (str): The path where the merged PDF will be saved.
+    """
     merger = PdfWriter()
 
     for pdf_file in pdf_files:
-        reader = PdfReader(pdf_file)  
-        for page in reader.pages:
-            merger.add_page(page)
+        try:
+            with open(pdf_file, "rb") as f:  # Use "rb" (read binary) for PDFs
+                reader = PdfReader(f)  
+                for page in reader.pages:
+                    merger.add_page(page)
+        except FileNotFoundError:
+            print(f"Error: File not found - {pdf_file}")
+        except Exception as e:  # Catch other potential errors
+            print(f"Error processing {pdf_file}: {e}")
 
-    # writing the merged PDF to the output path
-    with open(output_path, "wb") as output_pdf:
-        merger.write(output_pdf)
+    try:
+        with open(output_path, "wb") as output_pdf:  # Use "wb" (write binary) for PDFs
+            merger.write(output_pdf)
+    except Exception as e:
+        print(f"Error writing merged PDF: {e}")
+
+# def merge_pdfs(pdf_files, output_path):
+#     """Merges multiple PDF files into a single PDF."""
+#     merger = PdfWriter()
+
+#     for pdf_file in pdf_files:
+#         reader = PdfReader(pdf_file)  
+#         for page in reader.pages:
+#             merger.add_page(page)
+
+#     # writing the merged PDF to the output path
+#     with open(output_path, "wb") as output_pdf:
+#         merger.write(output_pdf)
 # excel_file=None
+
+
 def search_pdfs(pdf_files, search_words):
     """Searches for keywords in uploaded PDF files and returns results."""
 
