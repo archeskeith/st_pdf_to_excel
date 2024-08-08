@@ -182,9 +182,16 @@ def extract_text_from_page(page_num, pdf_path):
     images[0].save(thumbnail_path, "PNG")
 
     # if there's no text, then will use OCR
-    if not text.strip():
-        text = pytesseract.image_to_string(images[0])
+    # if not text.strip():
+    #     text = pytesseract.image_to_string(images[0])
 
+    if not text.strip():
+        try: 
+            images = convert_from_path(pdf_path,first_page=page_num+1,last_page=page_num+1)
+            text = pytesseract.image_to_string(images[0])
+        except Exception as e:
+            print(f"Error performing OCR on page {page_num + 1} : {e}")
+    
     return {
         'page_number': page_num,
         'text': text,
